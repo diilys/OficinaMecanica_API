@@ -1,192 +1,346 @@
-const formulario = document.getElementById("form-funcionario");
-const mensagem = document.getElementById("mensagem");
-
-const parametros = new URLSearchParams(window.location.search);
-const idFuncionario = parametros.get("id");
+const API_URL = "/funcionarios";
 
 let funcionarios = [];
 
-// ======================================================
-// CADASTRAR OU ALTERAR FUNCIONÁRIO
-// ======================================================
-if (formulario) {
-    formulario.addEventListener("submit", async function (evento) {
-        evento.preventDefault();
-        if (mensagem) mensagem.textContent = "";
-
-        const funcionario = {
-            nome: document.getElementById("nome").value,
-            cpf: document.getElementById("cpf").value,
-            telefone: document.getElementById("telefone").value,
-            cargo: document.getElementById("cargo").value,
-            estado_civil: document.getElementById("estado_civil").value,
-            endereco: document.getElementById("endereco").value,
-            email: document.getElementById("email").value,
-            senha: document.getElementById("senha").value
-        };
-
-        try {
-            let resposta;
-
-            if (idFuncionario) {
-                resposta = await fetch(`/funcionarios/${idFuncionario}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(funcionario)
-                });
-            } else {
-                resposta = await fetch("/funcionarios", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(funcionario)
-                });
-            }
-
-            const resultado = await resposta.json();
-
-            if (resposta.ok) {
-                if (mensagem) {
-                    mensagem.textContent = idFuncionario ? "Funcionário alterado com sucesso!" : "Funcionário cadastrado com sucesso!";
-                }
-                if (!idFuncionario) formulario.reset();
-            } else {
-                if (mensagem) mensagem.textContent = "Erro: " + obterMensagemErro(resultado);
-            }
-        } catch (erro) {
-            if (mensagem) mensagem.textContent = "Não foi possível conectar ao servidor.";
-            console.error("Erro de conexão:", erro);
-        }
-    });
-}
-
-function obterMensagemErro(resultado) {
-    if (!resultado.detail) return "Dados inválidos.";
-    if (Array.isArray(resultado.detail)) {
-        return resultado.detail.map(erro => erro.msg).join(" ");
-    }
-    return resultado.detail;
-}
-
-// ======================================================
-// CARREGAR E EXIBIR FUNCIONÁRIOS
-// ======================================================
+// ===============================
+// CARREGAR FUNCIONÁRIOS
+// ===============================
 async function carregarFuncionarios() {
-    const tabela = document.getElementById("listaFuncionarios");
-    if (!tabela) return;
-
     try {
-        const resposta = await fetch("/funcionarios");
-        if (!resposta.ok) throw new Error("Erro ao buscar funcionários.");
+        const resposta = await fetch(API_URL);
+
+        if (!resposta.ok) {
+            throw new Error("Erro ao carregar funcionários.");
+        }
 
         funcionarios = await resposta.json();
+
         exibirFuncionarios(funcionarios);
+
     } catch (erro) {
-        console.error("Erro ao carregar funcionários:", erro);
-        tabela.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Erro ao carregar os funcionários.</td></tr>`;
+        console.error(erro);
     }
 }
 
+// ===============================
+// EXIBIR FUNCIONÁRIOS
+// ===============================
 function exibirFuncionarios(lista) {
     const tabela = document.getElementById("listaFuncionarios");
+
     if (!tabela) return;
 
     tabela.innerHTML = "";
 
-    if (!lista || lista.length === 0) {
-        tabela.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Nenhum funcionário encontrado.</td></tr>`;
-        return;
-    }
-
-    lista.forEach(func => {
+    lista.forEach(funcionario => {
         const linha = document.createElement("tr");
+
         linha.innerHTML = `
-            <td>${func.id}</td>
-            <td class="fw-bold">${func.nome}</td>
-            <td>${func.cargo || 'N/A'}</td>
-            <td>${func.cpf}</td>
-            <td>${func.email}</td>
-            <td class="text-end">
-                <button type="button" class="btn btn-warning btn-sm me-1" onclick="alterarFuncionario(${func.id})">
-                    <i class="fa-solid fa-pen"></i>
+            <td>${funcionario.id}</td>
+            <td>${funcionario.nome || ""}</td>
+            <td>${funcionario.cpf || ""}</td>
+            <td>${funcionario.telefone || ""}</td>
+            <td>${funcionario.cargo || ""}</td>
+            <td>${funcionario.estado_civil || ""}</td>
+            <td>${funcionario.endereco || ""}</td>
+            <td>${funcionario.email || ""}</td>
+            
+            <td>
+                <button onclick="alterarFuncionario(${funcionario.id})">
+                    Alterar
                 </button>
-                <button type="button" class="btn btn-danger btn-sm" onclick="excluirFuncionario(${func.id}, '${func.nome}')">
-                    <i class="fa-solid fa-trash"></i>
+
+                <button onclick="excluirFuncionario(${funcionario.id})">
+                    Excluir
                 </button>
             </td>
         `;
+
         tabela.appendChild(linha);
     });
 }
 
-// ======================================================
-// LÓGICA DE FILTRAGEM EM TEMPO REAL
-// ======================================================
+// ===============================
+// FILTRO
+// ===============================
 function filtrarFuncionarios() {
-    const campoElemento = document.getElementById("campoFiltro");
-    const textoElemento = document.getElementById("textoFiltro");
+    const campo = document.getElementById("campoFiltro");
+    const texto = document.getElementById("textoFiltro");
 
-    if (!campoElemento || !textoElemento) return;
+    if (!campo || !texto) return;
 
-    const campo = campoElemento.value;
-    const texto = textoElemento.value.toLowerCase().trim();
+    const valorCampo = campo.value;
+    const valorTexto = texto.value.toLowerCase().trim();
 
-    const filtrados = funcionarios.filter(func => {
-        const valor = func[campo];
-        if (valor === null || valor === undefined) return false;
-        return String(valor).toLowerCase().includes(texto);
+    if (!valorTexto) {
+        exibirFuncionarios(funcionarios);
+        return;
+    }
+
+    const filtrados = funcionarios.filter(funcionario => {
+        let valor = "";
+
+        switch (valorCampo) {
+            case "id":
+                valor = funcionario.id;
+                break;
+
+            case "nome":
+                valor = funcionario.nome;
+                break;
+
+            case "cpf":
+                valor = funcionario.cpf;
+                break;
+
+            case "telefone":
+                valor = funcionario.telefone;
+                break;
+
+            case "cargo":
+                valor = funcionario.cargo;
+                break;
+
+            case "estado_civil":
+                valor = funcionario.estado_civil;
+                break;
+
+            case "endereco":
+                valor = funcionario.endereco;
+                break;
+
+            case "email":
+                valor = funcionario.email;
+                break;
+
+            default:
+                valor = "";
+        }
+
+        return String(valor || "")
+            .toLowerCase()
+            .includes(valorTexto);
     });
 
     exibirFuncionarios(filtrados);
 }
 
-function inicializarFiltros() {
-    const textoFiltro = document.getElementById("textoFiltro");
-    const campoFiltro = document.getElementById("campoFiltro");
-    const btnLimpar = document.getElementById("btnLimparFiltro");
+// ===============================
+// LIMPAR FILTRO
+// ===============================
+function limparFiltroFuncionarios() {
+    const texto = document.getElementById("textoFiltro");
 
-    if (textoFiltro) {
-        textoFiltro.addEventListener("input", filtrarFuncionarios);
-        textoFiltro.addEventListener("keyup", filtrarFuncionarios);
+    if (texto) {
+        texto.value = "";
     }
 
-    if (campoFiltro) {
-        campoFiltro.addEventListener("change", filtrarFuncionarios);
-    }
-
-    if (btnLimpar) {
-        btnLimpar.addEventListener("click", function () {
-            if (textoFiltro) textoFiltro.value = "";
-            exibirFuncionarios(funcionarios);
-        });
-    }
+    exibirFuncionarios(funcionarios);
 }
 
-// ======================================================
-// FUNÇÕES AUXILIARES E EXCLUSÃO
-// ======================================================
+// ===============================
+// ALTERAR FUNCIONÁRIO
+// ===============================
 function alterarFuncionario(id) {
     window.location.href = `/cadastro-funcionario?id=${id}`;
 }
 
-async function excluirFuncionario(id, nome) {
-    if (!confirm(`Deseja realmente excluir o funcionário ${nome}?`)) return;
+// ===============================
+// CARREGAR FUNCIONÁRIO PARA EDIÇÃO
+// ===============================
+async function carregarFuncionarioParaEdicao() {
+    const parametros = new URLSearchParams(window.location.search);
+    const id = parametros.get("id");
+
+    if (!id) return;
 
     try {
-        const resposta = await fetch(`/funcionarios/${id}`, { method: "DELETE" });
-        if (resposta.ok) {
-            alert("Funcionário excluído com sucesso!");
-            carregarFuncionarios();
-        } else {
-            const resultado = await resposta.json();
-            alert("Erro: " + obterMensagemErro(resultado));
+        const resposta = await fetch(API_URL);
+
+        if (!resposta.ok) {
+            throw new Error("Erro ao buscar funcionários.");
         }
+
+        const lista = await resposta.json();
+
+        const funcionario = lista.find(
+            item => Number(item.id) === Number(id)
+        );
+
+        if (!funcionario) {
+            alert("Funcionário não encontrado.");
+            return;
+        }
+
+        const nome = document.getElementById("nome");
+        const cpf = document.getElementById("cpf");
+        const telefone = document.getElementById("telefone");
+        const cargo = document.getElementById("cargo");
+        const estadoCivil = document.getElementById("estado_civil");
+        const endereco = document.getElementById("endereco");
+        const email = document.getElementById("email");
+        const funcionarioId = document.getElementById("funcionario_id");
+
+        if (nome) nome.value = funcionario.nome || "";
+        if (cpf) cpf.value = funcionario.cpf || "";
+        if (telefone) telefone.value = funcionario.telefone || "";
+        if (cargo) cargo.value = funcionario.cargo || "";
+        if (estadoCivil) estadoCivil.value = funcionario.estado_civil || "";
+        if (endereco) endereco.value = funcionario.endereco || "";
+        if (email) email.value = funcionario.email || "";
+
+        if (funcionarioId) {
+            funcionarioId.value = funcionario.id;
+        }
+
+        const titulo = document.getElementById("tituloFormulario");
+
+        if (titulo) {
+            titulo.textContent = "Alterar Funcionário";
+        }
+
+        const botao = document.getElementById("btnSalvarFuncionario");
+
+        if (botao) {
+            botao.textContent = "Salvar Alterações";
+        }
+
     } catch (erro) {
-        alert("Não foi possível conectar ao servidor.");
+        console.error(erro);
+        alert("Erro ao carregar funcionário.");
     }
 }
 
-// Inicialização
+// ===============================
+// SALVAR FUNCIONÁRIO
+// ===============================
+async function salvarFuncionario(event) {
+    event.preventDefault();
+
+    const parametros = new URLSearchParams(window.location.search);
+    const idURL = parametros.get("id");
+
+    const campoId = document.getElementById("funcionario_id");
+
+    const id = idURL || (campoId ? campoId.value : null);
+
+    const dados = {
+        nome: document.getElementById("nome").value,
+        cpf: document.getElementById("cpf").value,
+        telefone: document.getElementById("telefone").value,
+        cargo: document.getElementById("cargo").value,
+        estado_civil: document.getElementById("estado_civil").value,
+        endereco: document.getElementById("endereco").value,
+        email: document.getElementById("email").value
+    };
+
+    try {
+        let resposta;
+
+        if (id) {
+            // ALTERAÇÃO
+            resposta = await fetch(`${API_URL}/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(dados)
+            });
+
+        } else {
+            // CADASTRO
+            resposta = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(dados)
+            });
+        }
+
+        if (!resposta.ok) {
+            const erro = await resposta.text();
+            throw new Error(erro);
+        }
+
+        const mensagem = document.getElementById("mensagem");
+
+        if (mensagem) {
+            mensagem.textContent = id
+                ? "Funcionário alterado com sucesso!"
+                : "Funcionário cadastrado com sucesso!";
+        }
+
+        setTimeout(() => {
+            window.location.href = "/funcionarios.html";
+        }, 500);
+
+    } catch (erro) {
+        console.error(erro);
+
+        const mensagem = document.getElementById("mensagem");
+
+        if (mensagem) {
+            mensagem.textContent = "Erro ao salvar funcionário.";
+        }
+    }
+}
+
+// ===============================
+// EXCLUIR FUNCIONÁRIO
+// ===============================
+async function excluirFuncionario(id) {
+    if (!confirm("Deseja realmente excluir este funcionário?")) {
+        return;
+    }
+
+    try {
+        const resposta = await fetch(`${API_URL}/${id}`, {
+            method: "DELETE"
+        });
+
+        if (!resposta.ok) {
+            throw new Error("Erro ao excluir funcionário.");
+        }
+
+        carregarFuncionarios();
+
+    } catch (erro) {
+        console.error(erro);
+        alert("Erro ao excluir funcionário.");
+    }
+}
+
+// ===============================
+// INICIALIZAÇÃO
+// ===============================
 document.addEventListener("DOMContentLoaded", () => {
-    carregarFuncionarios();
-    inicializarFiltros();
+
+    if (document.getElementById("listaFuncionarios")) {
+        carregarFuncionarios();
+
+        const textoFiltro = document.getElementById("textoFiltro");
+        const campoFiltro = document.getElementById("campoFiltro");
+        const btnLimpar = document.getElementById("btnLimparFiltro");
+
+        if (textoFiltro) {
+            textoFiltro.addEventListener("input", filtrarFuncionarios);
+        }
+
+        if (campoFiltro) {
+            campoFiltro.addEventListener("change", filtrarFuncionarios);
+        }
+
+        if (btnLimpar) {
+            btnLimpar.addEventListener("click", limparFiltroFuncionarios);
+        }
+    }
+
+    if (document.getElementById("form-funcionario")) {
+        carregarFuncionarioParaEdicao();
+
+        document
+            .getElementById("form-funcionario")
+            .addEventListener("submit", salvarFuncionario);
+    }
 });

@@ -1,167 +1,754 @@
-const formularioOS = document.getElementById("form-os");
-const mensagemOS = document.getElementById("mensagemOS");
+const formularioOS =
+    document.getElementById("form-os");
 
+const mensagemOS =
+    document.getElementById("mensagemOS");
+
+const parametrosOS =
+    new URLSearchParams(
+        window.location.search
+    );
+
+const idOS =
+    parametrosOS.get("id");
+
+let ordensServico = [];
+
+
+// ======================================================
+// CADASTRAR OU ALTERAR ORDEM DE SERVIÇO
+// ======================================================
 if (formularioOS) {
-    formularioOS.addEventListener("submit", async function (evento) {
-        evento.preventDefault();
-        if (mensagemOS) mensagemOS.textContent = "";
 
-        const id = document.getElementById("os_id").value;
-        const osData = {
-            veiculo_id: parseInt(document.getElementById("veiculo_id").value, 10),
-            descricao: document.getElementById("descricao").value,
-            status: document.getElementById("status").value,
-            valor_total: parseFloat(document.getElementById("valor_total").value)
-        };
+    formularioOS.addEventListener(
+        "submit",
+        async function (evento) {
 
-        try {
-            let resposta;
-            if (id) {
-                resposta = await fetch(`/ordens-servico/${id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(osData)
-                });
-            } else {
-                resposta = await fetch("/ordens-servico", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(osData)
-                });
+            evento.preventDefault();
+
+            if (mensagemOS) {
+                mensagemOS.textContent = "";
             }
 
-            const resultado = await resposta.json();
+            const id =
+                document.getElementById(
+                    "os_id"
+                ).value;
 
-            if (resposta.ok) {
-                const modalElement = document.getElementById('modalOrdemServico');
-                if (modalElement) {
-                    const modal = bootstrap.Modal.getInstance(modalElement);
-                    if (modal) modal.hide();
+            const veiculoId =
+                parseInt(
+                    document.getElementById(
+                        "veiculo_id"
+                    ).value,
+                    10
+                );
+
+            const valorTotal =
+                parseFloat(
+                    document.getElementById(
+                        "valor_total"
+                    ).value
+                );
+
+            const osData = {
+
+                veiculo_id: veiculoId,
+
+                descricao:
+                    document.getElementById(
+                        "descricao"
+                    ).value,
+
+                status:
+                    document.getElementById(
+                        "status"
+                    ).value,
+
+                valor_total: valorTotal
+
+            };
+
+            try {
+
+                let resposta;
+
+                // ==========================================
+                // ALTERAR
+                // ==========================================
+                if (id) {
+
+                    resposta =
+                        await fetch(
+                            `/ordens-servico/${id}`,
+                            {
+                                method: "PUT",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body:
+                                    JSON.stringify(
+                                        osData
+                                    )
+                            }
+                        );
+
                 }
-                limparFormularioOS();
-                carregarOrdensServico();
-            } else {
-                if (mensagemOS) mensagemOS.textContent = "Erro: " + (resultado.detail || "Erro ao salvar Ordem de Serviço.");
+
+                // ==========================================
+                // CADASTRAR
+                // ==========================================
+                else {
+
+                    resposta =
+                        await fetch(
+                            "/ordens-servico",
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body:
+                                    JSON.stringify(
+                                        osData
+                                    )
+                            }
+                        );
+
+                }
+
+                const resultado =
+                    await resposta.json();
+
+                if (resposta.ok) {
+
+                    if (id) {
+
+                        alert(
+                            "Ordem de Serviço alterada com sucesso!"
+                        );
+
+                    } else {
+
+                        alert(
+                            "Ordem de Serviço cadastrada com sucesso!"
+                        );
+
+                    }
+
+                    // Volta para a lista
+                    window.location.href =
+                        "/painel-ordens";
+
+                } else {
+
+                    if (mensagemOS) {
+
+                        mensagemOS.textContent =
+                            "Erro: " +
+                            (
+                                resultado.detail ||
+                                "Erro ao salvar Ordem de Serviço."
+                            );
+
+                    }
+                }
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro:",
+                    erro
+                );
+
+                if (mensagemOS) {
+
+                    mensagemOS.textContent =
+                        "Não foi possível conectar ao servidor.";
+
+                }
             }
-        } catch (erro) {
-            if (mensagemOS) mensagemOS.textContent = "Não foi possível conectar ao servidor.";
         }
-    });
+    );
 }
 
-function limparFormularioOS() {
-    if (!formularioOS) return;
-    formularioOS.reset();
-    document.getElementById("os_id").value = "";
-    
-    const tituloModal = document.getElementById("modalOSTitulo");
-    if (tituloModal) tituloModal.textContent = "Nova Ordem de Serviço";
-    
-    const btnSalvar = document.getElementById("btnSalvarOS");
-    if (btnSalvar) btnSalvar.textContent = "Salvar OS";
-    
-    if (mensagemOS) mensagemOS.textContent = "";
-}
 
-async function carregarOrdensServico() {
-    const tabela = document.getElementById("listaOrdensServico");
-    if (!tabela) return;
+// ======================================================
+// CARREGAR OS PARA ALTERAÇÃO
+// ======================================================
+async function carregarOSParaAlteracao() {
+
+    // Sem ID = nova OS
+    if (!idOS) {
+
+        configurarFormularioNovoOS();
+
+        return;
+    }
 
     try {
-        const resposta = await fetch("/ordens-servico");
-        if (!resposta.ok) throw new Error("Erro ao carregar Ordens de Serviço.");
 
-        const ordens = await resposta.json();
-        exibirOrdensServico(ordens);
+        const resposta =
+            await fetch(
+                "/ordens-servico"
+            );
+
+        if (!resposta.ok) {
+
+            throw new Error(
+                "Erro ao carregar Ordens de Serviço."
+            );
+        }
+
+        const ordens =
+            await resposta.json();
+
+        const os =
+            ordens.find(
+                ordem =>
+                    String(ordem.id) ===
+                    String(idOS)
+            );
+
+        if (!os) {
+
+            if (mensagemOS) {
+
+                mensagemOS.textContent =
+                    "Ordem de Serviço não encontrada.";
+
+            }
+
+            return;
+        }
+
+        // ==========================================
+        // PREENCHER FORMULÁRIO
+        // ==========================================
+
+        document.getElementById(
+            "os_id"
+        ).value = os.id;
+
+        document.getElementById(
+            "veiculo_id"
+        ).value = os.veiculo_id;
+
+        document.getElementById(
+            "descricao"
+        ).value = os.descricao || "";
+
+        document.getElementById(
+            "status"
+        ).value = os.status || "Pendente";
+
+        document.getElementById(
+            "valor_total"
+        ).value = os.valor_total ?? 0;
+
+
+        // ==========================================
+        // ALTERAR TÍTULO
+        // ==========================================
+
+        const titulo =
+            document.getElementById(
+                "modalOSTitulo"
+            );
+
+        if (titulo) {
+
+            titulo.textContent =
+                "Alterar Ordem de Serviço";
+
+        }
+
+
+        // ==========================================
+        // ALTERAR BOTÃO
+        // ==========================================
+
+        const botao =
+            document.getElementById(
+                "btnSalvarOS"
+            );
+
+        if (botao) {
+
+            botao.textContent =
+                "Salvar Alterações";
+
+        }
+
     } catch (erro) {
-        tabela.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Erro ao carregar Ordens de Serviço.</td></tr>`;
+
+        console.error(
+            "Erro ao carregar OS:",
+            erro
+        );
+
+        if (mensagemOS) {
+
+            mensagemOS.textContent =
+                "Erro ao carregar os dados da Ordem de Serviço.";
+
+        }
     }
 }
 
+
+// ======================================================
+// CONFIGURAR NOVA OS
+// ======================================================
+function configurarFormularioNovoOS() {
+
+    const campoId =
+        document.getElementById(
+            "os_id"
+        );
+
+    if (campoId) {
+        campoId.value = "";
+    }
+
+    const titulo =
+        document.getElementById(
+            "modalOSTitulo"
+        );
+
+    if (titulo) {
+
+        titulo.textContent =
+            "Nova Ordem de Serviço";
+
+    }
+
+    const botao =
+        document.getElementById(
+            "btnSalvarOS"
+        );
+
+    if (botao) {
+
+        botao.textContent =
+            "Salvar OS";
+
+    }
+}
+
+
+// ======================================================
+// LIMPAR FORMULÁRIO
+// ======================================================
+function limparFormularioOS() {
+
+    if (!formularioOS) {
+        return;
+    }
+
+    formularioOS.reset();
+
+    configurarFormularioNovoOS();
+
+    if (mensagemOS) {
+        mensagemOS.textContent = "";
+    }
+}
+
+
+// ======================================================
+// CARREGAR ORDENS DE SERVIÇO
+// ======================================================
+async function carregarOrdensServico() {
+
+    const tabela =
+        document.getElementById(
+            "listaOrdensServico"
+        );
+
+    if (!tabela) {
+        return;
+    }
+
+    try {
+
+        const resposta =
+            await fetch(
+                "/ordens-servico"
+            );
+
+        if (!resposta.ok) {
+
+            throw new Error(
+                "Erro ao carregar Ordens de Serviço."
+            );
+        }
+
+        ordensServico =
+            await resposta.json();
+
+        filtrarOrdensServico();
+
+    } catch (erro) {
+
+        console.error(erro);
+
+        tabela.innerHTML = `
+            <tr>
+                <td colspan="7"
+                    class="text-center text-danger">
+                    Erro ao carregar Ordens de Serviço.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+
+// ======================================================
+// EXIBIR ORDENS DE SERVIÇO
+// ======================================================
 function exibirOrdensServico(lista) {
-    const tabela = document.getElementById("listaOrdensServico");
-    if (!tabela) return;
+
+    const tabela =
+        document.getElementById(
+            "listaOrdensServico"
+        );
+
+    if (!tabela) {
+        return;
+    }
 
     tabela.innerHTML = "";
 
     if (!lista || lista.length === 0) {
-        tabela.innerHTML = `<tr><td colspan="7" class="text-center text-muted">Nenhuma ordem de serviço encontrada.</td></tr>`;
+
+        tabela.innerHTML = `
+            <tr>
+                <td colspan="7"
+                    class="text-center text-muted">
+                    Nenhuma ordem de serviço encontrada.
+                </td>
+            </tr>
+        `;
+
         return;
     }
 
     lista.forEach(os => {
-        const linha = document.createElement("tr");
-        const descricaoSegura = os.descricao ? os.descricao.replace(/'/g, "\\'") : "";
-        
+
+        const linha =
+            document.createElement("tr");
+
         linha.innerHTML = `
-            <td>#${os.id}</td>
-            <td>${os.cliente_nome || 'N/A'}</td>
-            <td>${os.veiculo_modelo || ''} (${os.veiculo_placa || 'N/A'})</td>
-            <td>${os.descricao}</td>
-            <td><span class="badge ${obterClasseBadge(os.status)}">${os.status}</span></td>
-            <td>R$ ${Number(os.valor_total || 0).toFixed(2)}</td>
+
             <td>
-                <button type="button" class="btn btn-warning btn-sm" onclick="editarOS(${os.id}, ${os.veiculo_id}, '${descricaoSegura}', '${os.status}', ${os.valor_total})">✏️ Alterar</button>
-                <button type="button" class="btn btn-danger btn-sm" onclick="excluirOS(${os.id})">🗑️ Excluir</button>
+                #${os.id}
+            </td>
+
+            <td>
+                ${os.cliente_nome || "N/A"}
+            </td>
+
+            <td>
+                ${os.veiculo_modelo || ""}
+                (${os.veiculo_placa || "N/A"})
+            </td>
+
+            <td>
+                ${os.descricao || ""}
+            </td>
+
+            <td>
+                <span class="badge ${obterClasseBadge(os.status)}">
+                    ${os.status || ""}
+                </span>
+            </td>
+
+            <td>
+                R$ ${Number(
+                    os.valor_total || 0
+                ).toFixed(2)}
+            </td>
+
+            <td>
+
+                <button
+                    type="button"
+                    class="btn btn-warning btn-sm"
+                    onclick="editarOS(${os.id})">
+
+                    ✏️ Alterar
+
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    onclick="excluirOS(${os.id})">
+
+                    🗑️ Excluir
+
+                </button>
+
             </td>
         `;
+
         tabela.appendChild(linha);
     });
 }
 
+
+// ======================================================
+// FILTRAR ORDENS DE SERVIÇO
+// ======================================================
+function filtrarOrdensServico() {
+
+    const campoFiltro =
+        document.getElementById(
+            "campoFiltro"
+        );
+
+    const textoFiltro =
+        document.getElementById(
+            "textoFiltro"
+        );
+
+    if (!campoFiltro || !textoFiltro) {
+
+        exibirOrdensServico(
+            ordensServico
+        );
+
+        return;
+    }
+
+    const campo =
+        campoFiltro.value;
+
+    const texto =
+        textoFiltro.value
+            .toLowerCase()
+            .trim();
+
+    if (texto === "") {
+
+        exibirOrdensServico(
+            ordensServico
+        );
+
+        return;
+    }
+
+    const filtradas =
+        ordensServico.filter(os => {
+
+            const valor =
+                os[campo];
+
+            if (
+                valor === null ||
+                valor === undefined
+            ) {
+                return false;
+            }
+
+            return String(valor)
+                .toLowerCase()
+                .includes(texto);
+
+        });
+
+    exibirOrdensServico(
+        filtradas
+    );
+}
+
+
+// ======================================================
+// INICIALIZAR FILTROS
+// ======================================================
+function inicializarFiltros() {
+
+    const textoFiltro =
+        document.getElementById(
+            "textoFiltro"
+        );
+
+    const campoFiltro =
+        document.getElementById(
+            "campoFiltro"
+        );
+
+    const btnLimpar =
+        document.getElementById(
+            "btnLimparFiltro"
+        );
+
+    if (textoFiltro) {
+
+        textoFiltro.addEventListener(
+            "input",
+            filtrarOrdensServico
+        );
+
+    }
+
+    if (campoFiltro) {
+
+        campoFiltro.addEventListener(
+            "change",
+            filtrarOrdensServico
+        );
+
+    }
+
+    if (btnLimpar) {
+
+        btnLimpar.addEventListener(
+            "click",
+            function () {
+
+                if (textoFiltro) {
+                    textoFiltro.value = "";
+                }
+
+                exibirOrdensServico(
+                    ordensServico
+                );
+            }
+        );
+    }
+}
+
+
+// ======================================================
+// CLASSE DO STATUS
+// ======================================================
 function obterClasseBadge(status) {
-    const statusFormatado = status ? status.trim().toLowerCase() : "";
-    
+
+    const statusFormatado =
+        status
+            ? status.trim().toLowerCase()
+            : "";
+
     switch (statusFormatado) {
-        case "concluído": 
-        case "concluido": 
+
+        case "concluído":
+        case "concluido":
             return "bg-success";
-        case "em andamento": 
+
+        case "em andamento":
             return "bg-warning text-dark";
-        case "pendente": 
+
+        case "pendente":
             return "bg-secondary";
-        case "cancelado": 
+
+        case "cancelado":
             return "bg-danger";
-        default: 
+
+        default:
             return "bg-info";
     }
 }
 
-function editarOS(id, veiculo_id, descricao, status, valor_total) {
-    document.getElementById("os_id").value = id;
-    document.getElementById("veiculo_id").value = veiculo_id;
-    document.getElementById("descricao").value = descricao;
-    document.getElementById("status").value = status;
-    document.getElementById("valor_total").value = valor_total;
 
-    const tituloModal = document.getElementById("modalOSTitulo");
-    if (tituloModal) tituloModal.textContent = "Alterar Ordem de Serviço";
-    
-    const btnSalvar = document.getElementById("btnSalvarOS");
-    if (btnSalvar) btnSalvar.textContent = "Salvar Alterações";
+// ======================================================
+// ALTERAR ORDEM DE SERVIÇO
+// ======================================================
+function editarOS(id) {
 
-    const modalElement = document.getElementById('modalOrdemServico');
-    if (modalElement) {
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
-    }
+    window.location.href =
+        `/cadastro-ordem-servico?id=${id}`;
 }
 
+
+// ======================================================
+// EXCLUIR ORDEM DE SERVIÇO
+// ======================================================
 async function excluirOS(id) {
-    if (!confirm(`Deseja realmente excluir a OS #${id}?`)) return;
+
+    if (
+        !confirm(
+            `Deseja realmente excluir a OS #${id}?`
+        )
+    ) {
+        return;
+    }
 
     try {
-        const resposta = await fetch(`/ordens-servico/${id}`, { method: "DELETE" });
+
+        const resposta =
+            await fetch(
+                `/ordens-servico/${id}`,
+                {
+                    method: "DELETE"
+                }
+            );
+
         if (resposta.ok) {
-            alert("Ordem de Serviço excluída com sucesso!");
-            carregarOrdensServico();
+
+            alert(
+                "Ordem de Serviço excluída com sucesso!"
+            );
+
+            await carregarOrdensServico();
+
         } else {
-            const resultado = await resposta.json();
-            alert("Erro: " + (resultado.detail || "Não foi possível excluir a OS."));
+
+            const resultado =
+                await resposta.json();
+
+            alert(
+                "Erro: " +
+                (
+                    resultado.detail ||
+                    "Não foi possível excluir a OS."
+                )
+            );
         }
+
     } catch (erro) {
-        alert("Erro de conexão ao excluir OS.");
+
+        console.error(erro);
+
+        alert(
+            "Erro de conexão ao excluir OS."
+        );
     }
 }
 
-carregarOrdensServico();
+
+// ======================================================
+// INICIALIZAÇÃO
+// ======================================================
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        // Página de cadastro/alteração
+        if (formularioOS) {
+
+            carregarOSParaAlteracao();
+
+        }
+
+        // Página da lista
+        if (
+            document.getElementById(
+                "listaOrdensServico"
+            )
+        ) {
+
+            inicializarFiltros();
+
+            carregarOrdensServico();
+
+        }
+    }
+);
