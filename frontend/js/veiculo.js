@@ -2,25 +2,31 @@ const formulario = document.getElementById("form-veiculo");
 const mensagem = document.getElementById("mensagem");
 
 const parametros = new URLSearchParams(window.location.search);
-const veiculoId = parametros.get("id");
+const idVeiculo = parametros.get("id");
 
+let veiculos = [];
+
+// ======================================================
+// CADASTRAR OU ALTERAR VEÍCULO
+// ======================================================
 if (formulario) {
     formulario.addEventListener("submit", async function (evento) {
         evento.preventDefault();
-        mensagem.textContent = "";
+        if (mensagem) mensagem.textContent = "";
 
         const veiculo = {
             placa: document.getElementById("placa").value,
             marca: document.getElementById("marca").value,
             modelo: document.getElementById("modelo").value,
-            ano: parseInt(document.getElementById("ano").value),
-            cliente_id: parseInt(document.getElementById("cliente_id").value)
+            ano: document.getElementById("ano").value,
+            cliente_id: document.getElementById("cliente_id").value
         };
 
         try {
             let resposta;
-            if (veiculoId) {
-                resposta = await fetch(`/veiculos/${veiculoId}`, {
+
+            if (idVeiculo) {
+                resposta = await fetch(`/veiculos/${idVeiculo}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(veiculo)
@@ -33,94 +39,133 @@ if (formulario) {
                 });
             }
 
-            const resultado = await resposta.json();
-
             if (resposta.ok) {
-                if (veiculoId) {
-                    mensagem.textContent = "Veículo alterado com sucesso!";
-                } else {
-                    mensagem.textContent = "Veículo cadastrado com sucesso!";
-                    formulario.reset();
-                }
+                if (mensagem) mensagem.textContent = idVeiculo ? "Veículo alterado com sucesso!" : "Veículo cadastrado!";
+                if (!idVeiculo) formulario.reset();
             } else {
-                mensagem.textContent = "Erro: " + (resultado.detail || "Dados inválidos.");
+                if (mensagem) mensagem.textContent = "Erro ao salvar os dados do veículo.";
             }
         } catch (erro) {
-            mensagem.textContent = "Não foi possível conectar ao servidor.";
+            if (mensagem) mensagem.textContent = "Erro na conexão.";
         }
     });
 }
 
+// ======================================================
+// CARREGAR E EXIBIR VEÍCULOS
+// ======================================================
 async function carregarVeiculos() {
     const tabela = document.getElementById("listaVeiculos");
     if (!tabela) return;
 
     try {
         const resposta = await fetch("/veiculos");
-        if (!resposta.ok) throw new Error("Erro ao buscar veículos.");
-        
-        const veiculos = await resposta.json();
-        
-        tabela.innerHTML = "";
-        veiculos.forEach(v => {
-            const linha = document.createElement("tr");
-            linha.innerHTML = `
-                <td>${v.id}</td>
-                <td>${v.placa}</td>
-                <td>${v.marca} / ${v.modelo}</td>
-                <td>${v.ano}</td>
-                <td>${v.cliente_id}</td>
-                <td>
-                    <button class="btn btn-warning btn-sm" onclick="window.location.href='/frontend/cadastroVeiculo.html?id=${v.id}'">✏️</button>
-                    <button class="btn btn-danger btn-sm" onclick="excluirVeiculo(${v.id}, '${v.placa}')">🗑️</button>
-                </td>
-            `;
-            tabela.appendChild(linha);
-        });
+        if (!resposta.ok) throw new Error("Erro ao carregar veículos.");
+
+        veiculos = await resposta.json();
+        exibirVeiculos(veiculos);
     } catch (erro) {
-        tabela.innerHTML = `<tr><td colspan="6">Erro ao carregar veículos.</td></tr>`;
+        console.error(erro);
+        tabela.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Erro ao carregar dados.</td></tr>`;
     }
 }
 
-async function carregarVeiculoParaAlteracao() {
-    if (!veiculoId || !formulario) return;
+function exibirVeiculos(lista) {
+    const tabela = document.getElementById("listaVeiculos");
+    if (!tabela) return;
 
-    try {
-        const resposta = await fetch(`/veiculos`);
-        const veiculos = await resposta.json();
-        const veiculo = veiculos.find(v => v.id == veiculoId);
+    tabela.innerHTML = "";
 
-        if (!veiculo) return (mensagem.textContent = "Veículo não encontrado.");
-
-        document.getElementById("placa").value = veiculo.placa;
-        document.getElementById("marca").value = veiculo.marca;
-        document.getElementById("modelo").value = veiculo.modelo;
-        document.getElementById("ano").value = veiculo.ano;
-        document.getElementById("cliente_id").value = veiculo.cliente_id;
-        
-        document.getElementById("tituloFormulario").textContent = "Alterar Veículo";
-        document.getElementById("btnSalvar").textContent = "Salvar alterações";
-    } catch (erro) {
-        mensagem.textContent = "Erro ao carregar os dados.";
+    if (!lista || lista.length === 0) {
+        tabela.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Nenhum veículo encontrado.</td></tr>`;
+        return;
     }
+
+    lista.forEach(veic => {
+        const linha = document.createElement("tr");
+        linha.innerHTML = `
+            <td>${veic.id}</td>
+            <td class="fw-bold">${veic.placa}</td>
+            <td>${veic.marca} ${veic.modelo}</td>
+            <td>${veic.ano}</td>
+            <td>${veic.cliente_nome || 'N/A'}</td>
+            <td class="text-end">
+                <button type="button" class="btn btn-warning btn-sm me-1" onclick="alterarVeiculo(${veic.id})">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="excluirVeiculo(${veic.id}, '${veic.placa}')">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tabela.appendChild(linha);
+    });
+}
+
+// ======================================================
+// LÓGICA DE FILTRAGEM EM TEMPO REAL
+// ======================================================
+function filtrarVeiculos() {
+    const campoElemento = document.getElementById("campoFiltro");
+    const textoElemento = document.getElementById("textoFiltro");
+
+    if (!campoElemento || !textoElemento) return;
+
+    const campo = campoElemento.value;
+    const texto = textoElemento.value.toLowerCase().trim();
+
+    const filtrados = veiculos.filter(veic => {
+        const valor = veic[campo];
+        if (valor === null || valor === undefined) return false;
+        return String(valor).toLowerCase().includes(texto);
+    });
+
+    exibirVeiculos(filtrados);
+}
+
+function inicializarFiltros() {
+    const textoFiltro = document.getElementById("textoFiltro");
+    const campoFiltro = document.getElementById("campoFiltro");
+    const btnLimpar = document.getElementById("btnLimparFiltro");
+
+    if (textoFiltro) {
+        textoFiltro.addEventListener("input", filtrarVeiculos);
+        textoFiltro.addEventListener("keyup", filtrarVeiculos);
+    }
+
+    if (campoFiltro) {
+        campoFiltro.addEventListener("change", filtrarVeiculos);
+    }
+
+    if (btnLimpar) {
+        btnLimpar.addEventListener("click", function () {
+            if (textoFiltro) textoFiltro.value = "";
+            exibirVeiculos(veiculos);
+        });
+    }
+}
+
+function alterarVeiculo(id) {
+    window.location.href = `/cadastro-veiculo?id=${id}`;
 }
 
 async function excluirVeiculo(id, placa) {
-    if (!confirm(`Excluir o veículo de placa ${placa}?`)) return;
+    if (!confirm(`Deseja excluir o veículo de placa ${placa}?`)) return;
 
     try {
         const resposta = await fetch(`/veiculos/${id}`, { method: "DELETE" });
         if (resposta.ok) {
-            alert("Excluído com sucesso!");
+            alert("Veículo excluído com sucesso!");
             carregarVeiculos();
         } else {
-            const resultado = await resposta.json();
-            alert("Erro: " + (resultado.detail || "Erro desconhecido."));
+            alert("Erro ao excluir veículo.");
         }
     } catch (erro) {
         alert("Erro de conexão.");
     }
 }
 
-carregarVeiculos();
-carregarVeiculoParaAlteracao();
+document.addEventListener("DOMContentLoaded", () => {
+    carregarVeiculos();
+    inicializarFiltros();
+});

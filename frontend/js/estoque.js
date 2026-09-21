@@ -1,22 +1,30 @@
-const formularioEstoque = document.getElementById("form-estoque");
-const mensagemEstoque = document.getElementById("mensagemEstoque");
+const formulario = document.getElementById("form-estoque");
+const mensagem = document.getElementById("mensagem");
 
-if (formularioEstoque) {
-    formularioEstoque.addEventListener("submit", async function (evento) {
+const parametros = new URLSearchParams(window.location.search);
+const idItem = parametros.get("id");
+
+let itensEstoque = [];
+
+// ======================================================
+// CADASTRAR OU ALTERAR PEÇA NO ESTOQUE
+// ======================================================
+if (formulario) {
+    formulario.addEventListener("submit", async function (evento) {
         evento.preventDefault();
-        mensagemEstoque.textContent = "";
+        if (mensagem) mensagem.textContent = "";
 
-        const id = document.getElementById("estoque_id").value;
         const item = {
-            nome: document.getElementById("nome_peca").value,
-            quantidade: parseInt(document.getElementById("quantidade").value),
-            preco: parseFloat(document.getElementById("preco").value)
+            nome: document.getElementById("nome").value,
+            quantidade: document.getElementById("quantidade").value,
+            preco: document.getElementById("preco").value
         };
 
         try {
             let resposta;
-            if (id) {
-                resposta = await fetch(`/estoque/${id}`, {
+
+            if (idItem) {
+                resposta = await fetch(`/estoque/${idItem}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(item)
@@ -29,44 +37,34 @@ if (formularioEstoque) {
                 });
             }
 
-            const resultado = await resposta.json();
-
             if (resposta.ok) {
-                const modalElement = document.getElementById('modalItemEstoque');
-                const modal = bootstrap.Modal.getInstance(modalElement);
-                if (modal) modal.hide();
-                limparFormularioEstoque();
-                carregarEstoque();
+                if (mensagem) mensagem.textContent = idItem ? "Item alterado!" : "Item adicionado ao estoque!";
+                if (!idItem) formulario.reset();
             } else {
-                mensagemEstoque.textContent = "Erro: " + (resultado.detail || "Erro ao salvar item.");
+                if (mensagem) mensagem.textContent = "Erro ao registrar peça.";
             }
         } catch (erro) {
-            mensagemEstoque.textContent = "Não foi possível conectar ao servidor.";
+            if (mensagem) mensagem.textContent = "Erro de rede.";
         }
     });
 }
 
-function limparFormularioEstoque() {
-    if (!formularioEstoque) return;
-    formularioEstoque.reset();
-    document.getElementById("estoque_id").value = "";
-    document.getElementById("modalEstoqueTitulo").textContent = "Cadastrar Peça";
-    document.getElementById("btnSalvarEstoque").textContent = "Salvar";
-    mensagemEstoque.textContent = "";
-}
-
+// ======================================================
+// CARREGAR E EXIBIR ESTOQUE
+// ======================================================
 async function carregarEstoque() {
     const tabela = document.getElementById("listaEstoque");
     if (!tabela) return;
 
     try {
         const resposta = await fetch("/estoque");
-        if (!resposta.ok) throw new Error("Erro ao buscar itens do estoque.");
+        if (!resposta.ok) throw new Error("Erro ao buscar estoque.");
 
-        const itens = await resposta.json();
-        exibirEstoque(itens);
+        itensEstoque = await resposta.json();
+        exibirEstoque(itensEstoque);
     } catch (erro) {
-        tabela.innerHTML = `<tr><td colspan="5">Erro ao carregar o estoque.</td></tr>`;
+        console.error(erro);
+        tabela.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Erro ao carregar dados.</td></tr>`;
     }
 }
 
@@ -75,50 +73,96 @@ function exibirEstoque(lista) {
     if (!tabela) return;
 
     tabela.innerHTML = "";
+
+    if (!lista || lista.length === 0) {
+        tabela.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhuma peça encontrada.</td></tr>`;
+        return;
+    }
+
     lista.forEach(item => {
         const linha = document.createElement("tr");
         linha.innerHTML = `
             <td>${item.id}</td>
-            <td>${item.nome}</td>
+            <td class="fw-bold">${item.nome}</td>
             <td>${item.quantidade}</td>
-            <td>R$ ${Number(item.preco).toFixed(2)}</td>
-            <td>
-                <button type="button" class="btn btn-warning btn-sm" onclick="editarItemEstoque(${item.id}, '${item.nome}', ${item.quantidade}, ${item.preco})">✏️ Alterar</button>
-                <button type="button" class="btn btn-danger btn-sm" onclick="excluirItemEstoque(${item.id}, '${item.nome}')">🗑️ Excluir</button>
+            <td>R$ ${parseFloat(item.preco).toFixed(2)}</td>
+            <td class="text-end">
+                <button type="button" class="btn btn-warning btn-sm me-1" onclick="alterarItem(${item.id})">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="excluirItem(${item.id}, '${item.nome}')">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
             </td>
         `;
         tabela.appendChild(linha);
     });
 }
 
-function editarItemEstoque(id, nome, quantidade, preco) {
-    document.getElementById("estoque_id").value = id;
-    document.getElementById("nome_peca").value = nome;
-    document.getElementById("quantidade").value = quantidade;
-    document.getElementById("preco").value = preco;
+// ======================================================
+// LÓGICA DE FILTRAGEM EM TEMPO REAL
+// ======================================================
+function filtrarEstoque() {
+    const campoElemento = document.getElementById("campoFiltro");
+    const textoElemento = document.getElementById("textoFiltro");
 
-    document.getElementById("modalEstoqueTitulo").textContent = "Alterar Peça";
-    document.getElementById("btnSalvarEstoque").textContent = "Salvar Alterações";
+    if (!campoElemento || !textoElemento) return;
 
-    const modal = new bootstrap.Modal(document.getElementById('modalItemEstoque'));
-    modal.show();
+    const campo = campoElemento.value;
+    const texto = textoElemento.value.toLowerCase().trim();
+
+    const filtrados = itensEstoque.filter(item => {
+        const valor = item[campo];
+        if (valor === null || valor === undefined) return false;
+        return String(valor).toLowerCase().includes(texto);
+    });
+
+    exibirEstoque(filtrados);
 }
 
-async function excluirItemEstoque(id, nome) {
-    if (!confirm(`Deseja realmente remover '${nome}' do estoque?`)) return;
+function inicializarFiltros() {
+    const textoFiltro = document.getElementById("textoFiltro");
+    const campoFiltro = document.getElementById("campoFiltro");
+    const btnLimpar = document.getElementById("btnLimparFiltro");
+
+    if (textoFiltro) {
+        textoFiltro.addEventListener("input", filtrarEstoque);
+        textoFiltro.addEventListener("keyup", filtrarEstoque);
+    }
+
+    if (campoFiltro) {
+        campoFiltro.addEventListener("change", filtrarEstoque);
+    }
+
+    if (btnLimpar) {
+        btnLimpar.addEventListener("click", function () {
+            if (textoFiltro) textoFiltro.value = "";
+            exibirEstoque(itensEstoque);
+        });
+    }
+}
+
+function alterarItem(id) {
+    window.location.href = `/cadastro-estoque?id=${id}`;
+}
+
+async function excluirItem(id, nome) {
+    if (!confirm(`Deseja remover ${nome} do estoque?`)) return;
 
     try {
         const resposta = await fetch(`/estoque/${id}`, { method: "DELETE" });
         if (resposta.ok) {
-            alert("Item excluído com sucesso!");
+            alert("Item removido!");
             carregarEstoque();
         } else {
-            const resultado = await resposta.json();
-            alert("Erro: " + (resultado.detail || "Não foi possível excluir o item."));
+            alert("Erro ao excluir item.");
         }
     } catch (erro) {
-        alert("Erro de conexão ao excluir.");
+        alert("Erro na conexão.");
     }
 }
 
-carregarEstoque();
+document.addEventListener("DOMContentLoaded", () => {
+    carregarEstoque();
+    inicializarFiltros();
+});

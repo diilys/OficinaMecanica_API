@@ -41,35 +41,60 @@ def pagina_login():
 def pagina_sistema_admin():
     return FileResponse(FRONTEND_DIR / "sistema.html")
 
-@app.get("/cadastro-cliente", include_in_schema=False)
-@app.get("/cadastroCliente.html", include_in_schema=False)
-def pagina_cadastro_cliente():
-    return FileResponse(FRONTEND_DIR / "cadastroCliente.html")
-
+# --- CLIENTES ---
 @app.get("/painel-clientes", include_in_schema=False)
 @app.get("/clientes.html", include_in_schema=False)
 def pagina_clientes():
     return FileResponse(FRONTEND_DIR / "clientes.html")
 
-@app.get("/painel-estoque", include_in_schema=False)
-@app.get("/estoque.html", include_in_schema=False)
-def pagina_estoque():
-    return FileResponse(FRONTEND_DIR / "estoque.html")
+@app.get("/cadastro-cliente", include_in_schema=False)
+@app.get("/cadastroCliente.html", include_in_schema=False)
+def pagina_cadastro_cliente():
+    return FileResponse(FRONTEND_DIR / "cadastroCliente.html")
 
-@app.get("/painel-ordens", include_in_schema=False)
-@app.get("/ordensServico.html", include_in_schema=False)
-def pagina_ordens_servico():
-    return FileResponse(FRONTEND_DIR / "ordensServico.html")
+# --- FUNCIONÁRIOS ---
+@app.get("/painel-funcionarios", include_in_schema=False)
+@app.get("/funcionarios.html", include_in_schema=False)
+def pagina_funcionarios():
+    return FileResponse(FRONTEND_DIR / "funcionarios.html")
 
+@app.get("/cadastro-funcionario", include_in_schema=False)
+@app.get("/cadastroFuncionario.html", include_in_schema=False)
+def pagina_cadastro_funcionario():
+    return FileResponse(FRONTEND_DIR / "cadastroFuncionario.html")
+
+# --- VEÍCULOS ---
 @app.get("/painel-veiculos", include_in_schema=False)
 @app.get("/veiculos.html", include_in_schema=False)
 def pagina_veiculos():
     return FileResponse(FRONTEND_DIR / "veiculos.html")
 
-@app.get("/painel-funcionarios", include_in_schema=False)
-@app.get("/funcionarios.html", include_in_schema=False)
-def pagina_funcionarios():
-    return FileResponse(FRONTEND_DIR / "funcionarios.html")
+@app.get("/cadastro-veiculo", include_in_schema=False)
+@app.get("/cadastroVeiculo.html", include_in_schema=False)
+def pagina_cadastro_veiculo():
+    return FileResponse(FRONTEND_DIR / "cadastroVeiculo.html")
+
+# --- ESTOQUE ---
+@app.get("/painel-estoque", include_in_schema=False)
+@app.get("/estoque.html", include_in_schema=False)
+def pagina_estoque():
+    return FileResponse(FRONTEND_DIR / "estoque.html")
+
+@app.get("/cadastro-estoque", include_in_schema=False)
+@app.get("/cadastroEstoque.html", include_in_schema=False)
+def pagina_cadastro_estoque():
+    return FileResponse(FRONTEND_DIR / "cadastroEstoque.html")
+
+# --- ORDENS DE SERVIÇO ---
+@app.get("/painel-ordens", include_in_schema=False)
+@app.get("/ordensServico.html", include_in_schema=False)
+def pagina_ordens_servico():
+    return FileResponse(FRONTEND_DIR / "ordensServico.html")
+
+@app.get("/cadastro-ordem-servico", include_in_schema=False)
+@app.get("/cadastroOrdemServico.html", include_in_schema=False)
+def pagina_cadastro_ordem_servico():
+    return FileResponse(FRONTEND_DIR / "cadastroOrdemServico.html")
 
 
 # ============================================================

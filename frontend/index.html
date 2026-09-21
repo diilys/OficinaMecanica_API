@@ -19,7 +19,7 @@
         <div class="container-fluid px-4">
             <div class="row w-100 align-items-center m-0">
                 
-                <!-- Coluna Esquerda: Botão do Menu Lateral (3 listras horizontais brancas) -->
+                <!-- Coluna Esquerda: Botão do Menu Lateral -->
                 <div class="col-4 d-flex align-items-center">
                     <button id="btn-toggle-menu" onclick="toggleSidebar()" class="btn text-white p-0 fs-4 border-0 shadow-none d-flex align-items-center">
                         <i class="fa-solid fa-bars text-white"></i>
@@ -43,40 +43,13 @@
         </div>
     </nav>
 
-    <!-- Aba Lateral (Sidebar) Deslizante Grudada na Navbar (top: 48px) -->
+    <!-- Aba Lateral (Sidebar) Deslizante -->
     <div id="sidebar-lateral" class="position-fixed shadow-lg p-3 bg-white" style="top: 48px; left: -320px; width: 320px; height: calc(100vh - 48px); transition: left 0.3s ease; z-index: 1050; overflow-y: auto;">
         <div class="d-flex flex-column gap-3 mt-2">
             <h5 class="fw-bold mb-3" style="color: #5381FF;">Menu de Navegação</h5>
             
-            <!-- Card 1: Garagem -->
-            <div class="card card-custom p-3 border-0 shadow-sm"
-                style="background-color: #ffffff; color: #323232; cursor: pointer;"
-                onclick="window.location.href='#'">
-                <div class="d-flex align-items-center h-100">
-                    <div class="me-3 bg-light rounded d-flex align-items-center justify-content-center flex-shrink-0" style="width: 70px; height: 70px;">
-                        <i class="fa-solid fa-car fs-2" style="color: #5381FF;"></i>
-                    </div>
-                    <div>
-                        <h6 class="fw-bold mb-1">Garagem</h6>
-                        <p class="text-muted small m-0">Gerencie e visualize seus veículos cadastrados.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Card 2: Histórico de Serviços -->
-            <div class="card card-custom p-3 border-0 shadow-sm"
-                style="background-color: #ffffff; color: #323232; cursor: pointer;"
-                onclick="window.location.href='#'">
-                <div class="d-flex align-items-center h-100">
-                    <div class="me-3 bg-light rounded d-flex align-items-center justify-content-center flex-shrink-0" style="width: 70px; height: 70px;">
-                        <i class="fa-solid fa-screwdriver-wrench fs-2" style="color: #5381FF;"></i>
-                    </div>
-                    <div>
-                        <h6 class="fw-bold mb-1">Histórico de Serviços</h6>
-                        <p class="text-muted small m-0">Acompanhe as manutenções e ordens passadas.</p>
-                    </div>
-                </div>
-            </div>
+            <!-- Conteúdo carregado dinamicamente via JS -->
+            <div id="conteudo-menu-lateral"></div>
         </div>
     </div>
 
@@ -85,8 +58,7 @@
 
         <!-- Imagem Grande de Extremidade a Extremidade -->
         <div class="container-fluid p-0 hero-section">
-            <img src="/frontend/assets/fotoInicial.svg"
-                alt="Oficina Mecânica" class="w-100 object-fit-cover" style="height: 450px;">
+            <img src="/frontend/assets/fotoInicial.svg" alt="Oficina Mecânica" class="w-100 object-fit-cover" style="height: 450px;">
         </div>
 
         <!-- Retângulo de Estatísticas (#F97316) -->
@@ -109,67 +81,49 @@
 
         <!-- Seção de Agendamento -->
         <section class="container my-5">
-            <!-- Faixa Retangular de Título (#5381FF) -->
-            <div class="text-white text-center py-2 rounded-top fw-bold fs-4 shadow-sm"
-                style="background-color: #5381FF;">
+            <div class="text-white text-center py-2 rounded-top fw-bold fs-4 shadow-sm" style="background-color: #5381FF;">
                 Agendamento
             </div>
 
-            <!-- Grupo de Cards -->
             <div class="bg-white p-4 rounded-bottom shadow-sm border border-top-0">
                 <div class="row g-4 align-items-stretch">
 
-                    <!-- Lado Esquerdo: Dois cards menores empilhados -->
                     <div class="col-lg-6 d-flex flex-column gap-4">
-                        <!-- Card Profissionais -->
-                        <div class="card card-custom flex-grow-1 p-3 border-0 shadow-sm"
-                            style="background-color: #ffffff; color: #323232; cursor: pointer;"
-                            onclick="window.location.href='#'">
+                        <div class="card card-custom flex-grow-1 p-3 border-0 shadow-sm" style="background-color: #ffffff; color: #323232; cursor: pointer;" onclick="window.location.href='#'">
                             <div class="d-flex align-items-center h-100">
                                 <div class="me-3 bg-light rounded overflow-hidden flex-shrink-0" style="width: 80px; height: 80px;">
                                     <img src="/frontend/assets/profissionaisCard.svg" alt="Profissionais" class="w-100 h-100 object-fit-cover">
                                 </div>
                                 <div>
                                     <h5 class="fw-bold mb-1">Profissionais</h5>
-                                    <p class="text-muted small m-0">Conheça nossos critérios de seleção e seriedade
-                                        empresarial.</p>
+                                    <p class="text-muted small m-0">Conheça nossos critérios de seleção e seriedade empresarial.</p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Card Serviços -->
-                        <div class="card card-custom flex-grow-1 p-3 border-0 shadow-sm"
-                            style="background-color: #ffffff; color: #323232; cursor: pointer;"
-                            onclick="window.location.href='#'">
+                        <div class="card card-custom flex-grow-1 p-3 border-0 shadow-sm" style="background-color: #ffffff; color: #323232; cursor: pointer;" onclick="window.location.href='#'">
                             <div class="d-flex align-items-center h-100">
                                 <div class="me-3 bg-light rounded overflow-hidden flex-shrink-0" style="width: 80px; height: 80px;">
                                     <img src="/frontend/assets/servicosCard.svg" alt="Serviços" class="w-100 h-100 object-fit-cover">
                                 </div>
                                 <div>
                                     <h5 class="fw-bold mb-1">Serviços</h5>
-                                    <p class="text-muted small m-0">Explore a lista completa de serviços cobertos pela
-                                        nossa oficina.</p>
+                                    <p class="text-muted small m-0">Explore a lista completa de serviços cobertos pela nossa oficina.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Lado Direito: Card Maior -->
                     <div class="col-lg-6">
-                        <div class="card card-custom h-100 p-4 border-0 shadow-sm d-flex flex-column justify-content-between"
-                            style="background-color: #ffffff; color: #323232;">
+                        <div class="card card-custom h-100 p-4 border-0 shadow-sm d-flex flex-column justify-content-between" style="background-color: #ffffff; color: #323232;">
                             <div>
                                 <div class="mb-3 overflow-hidden rounded" style="height: 200px;">
-                                    <img src="/frontend/assets/agendamentoCard.svg"
-                                        alt="Agendamento" class="w-100 h-100 object-fit-cover">
+                                    <img src="/frontend/assets/agendamentoCard.svg" alt="Agendamento" class="w-100 h-100 object-fit-cover">
                                 </div>
                                 <h4 class="fw-bold">Faça sua Avaliação e Agendamento</h4>
-                                <p class="text-muted">Garanta o melhor atendimento para o seu veículo de forma rápida e
-                                    segura com profissionais qualificados.</p>
+                                <p class="text-muted">Garanta o melhor atendimento para o seu veículo de forma rápida e segura com profissionais qualificados.</p>
                             </div>
-                            <!-- Botão Agendar Agora com Validação de Login -->
-                            <button onclick="verificarLoginEAgendar()" class="btn text-white fw-bold py-2 mt-3 border-0"
-                                style="background-color: #F97316;">Agendar Agora</button>
+                            <button onclick="verificarLoginEAgendar()" class="btn text-white fw-bold py-2 mt-3 border-0" style="background-color: #F97316;">Agendar Agora</button>
                         </div>
                     </div>
 
@@ -179,10 +133,9 @@
 
     </main>
 
-    <!-- Footer Dividido em Duas Partes -->
+    <!-- Footer -->
     <footer class="mt-5">
-        <div class="container-fluid text-white py-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-center"
-            style="background-color: #5381FF;">
+        <div class="container-fluid text-white py-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-center" style="background-color: #5381FF;">
             <div class="fw-semibold mb-2 mb-md-0">
                 Contata-nos através de nossas redes oficiais!
             </div>
@@ -221,9 +174,12 @@
         document.addEventListener("DOMContentLoaded", function() {
             const usuarioSalvo = localStorage.getItem("usuarioLogado");
             const areaAuth = document.getElementById("area-auth");
+            const menuLateral = document.getElementById("conteudo-menu-lateral");
             
+            let usuario = null;
+
             if (usuarioSalvo) {
-                const usuario = JSON.parse(usuarioSalvo);
+                usuario = JSON.parse(usuarioSalvo);
                 areaAuth.innerHTML = `
                     <div class="d-flex align-items-center gap-2 text-white justify-content-end">
                         <span class="fw-semibold small text-truncate" style="max-width: 130px;"><i class="fa-solid fa-user me-1"></i> ${usuario.nome}</span>
@@ -231,19 +187,65 @@
                     </div>
                 `;
             }
+
+            // Renderiza o menu lateral baseado no nível do usuário (ex: 'admin')
+            if (usuario && (usuario.nivel === 'admin' || usuario.tipo === 'admin')) {
+                menuLateral.innerHTML = `
+                    <!-- Card Sistema (Apenas Admin) -->
+                    <div class="card card-custom p-3 border-0 shadow-sm"
+                        style="background-color: #ffffff; color: #323232; cursor: pointer;"
+                        onclick="window.location.href='/painel-admin'">
+                        <div class="d-flex align-items-center h-100">
+                            <div class="me-3 bg-light rounded d-flex align-items-center justify-content-center flex-shrink-0" style="width: 70px; height: 70px;">
+                                <i class="fa-solid fa-gear fs-2" style="color: #5381FF;"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Sistema</h6>
+                                <p class="text-muted small m-0">Acesse a área administrativa do sistema.</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                menuLateral.innerHTML = `
+                    <!-- Card Garagem -->
+                    <div class="card card-custom p-3 border-0 shadow-sm mb-3"
+                        style="background-color: #ffffff; color: #323232; cursor: pointer;"
+                        onclick="window.location.href='#'">
+                        <div class="d-flex align-items-center h-100">
+                            <div class="me-3 bg-light rounded d-flex align-items-center justify-content-center flex-shrink-0" style="width: 70px; height: 70px;">
+                                <i class="fa-solid fa-car fs-2" style="color: #5381FF;"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Garagem</h6>
+                                <p class="text-muted small m-0">Gerencie e visualize seus veículos cadastrados.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Histórico de Serviços -->
+                    <div class="card card-custom p-3 border-0 shadow-sm"
+                        style="background-color: #ffffff; color: #323232; cursor: pointer;"
+                        onclick="window.location.href='#'">
+                        <div class="d-flex align-items-center h-100">
+                            <div class="me-3 bg-light rounded d-flex align-items-center justify-content-center flex-shrink-0" style="width: 70px; height: 70px;">
+                                <i class="fa-solid fa-screwdriver-wrench fs-2" style="color: #5381FF;"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Histórico de Serviços</h6>
+                                <p class="text-muted small m-0">Acompanhe as manutenções e ordens passadas.</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
         });
 
-        // Alternar abertura/fechamento da aba lateral
         function toggleSidebar() {
             const sidebar = document.getElementById("sidebar-lateral");
-            if (sidebar.style.left === "0px") {
-                sidebar.style.left = "-320px";
-            } else {
-                sidebar.style.left = "0px";
-            }
+            sidebar.style.left = (sidebar.style.left === "0px") ? "-320px" : "0px";
         }
 
-        // Função chamada ao clicar no botão "Agendar Agora"
         function verificarLoginEAgendar() {
             const usuarioSalvo = localStorage.getItem("usuarioLogado");
 
@@ -255,7 +257,6 @@
             }
         }
 
-        // Função para limpar a sessão e recarregar a página
         function fazerLogout() {
             localStorage.removeItem("usuarioLogado");
             window.location.reload();
