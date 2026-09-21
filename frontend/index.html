@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeMechanics - Painel Principal</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/frontend/css/estilo.css">
+</head>
+
+<body>
+
+    <!-- Barra de Navegação Fixa -->
+    <nav class="navbar navbar-expand-lg fixed-top shadow-sm py-1" style="background-color: #5381FF; z-index: 1060;">
+        <div class="container-fluid px-4">
+            <div class="row w-100 align-items-center m-0">
+                
+                <!-- Coluna Esquerda: Botão do Menu Lateral (3 listras horizontais brancas) -->
+                <div class="col-4 d-flex align-items-center">
+                    <button id="btn-toggle-menu" onclick="toggleSidebar()" class="btn text-white p-0 fs-4 border-0 shadow-none d-flex align-items-center">
+                        <i class="fa-solid fa-bars text-white"></i>
+                    </button>
+                </div>
+
+                <!-- Coluna Central: Nome perfeitamente centralizado -->
+                <div class="col-4 text-center">
+                    <a class="navbar-brand fw-bold fs-3 brand-title m-0" href="#">
+                        <span style="color: #ffffff;">Vibe</span><span style="color: #323232;">Mechanics</span>
+                    </a>
+                </div>
+
+                <!-- Coluna Direita: Área Dinâmica (Login/Cadastro ou Nome do Usuário + Sair) -->
+                <div id="area-auth" class="col-4 d-flex justify-content-end gap-2">
+                    <a href="/login" class="btn btn-light px-3 py-1 fw-semibold text-primary">Login</a>
+                    <a href="/cadastro-cliente" class="btn btn-outline-light px-3 py-1 fw-semibold">Cadastro</a>
+                </div>
+
+            </div>
+        </div>
+    </nav>
+
+    <!-- Aba Lateral (Sidebar) Deslizante Grudada na Navbar (top: 48px) -->
+    <div id="sidebar-lateral" class="position-fixed shadow-lg p-3 bg-white" style="top: 48px; left: -320px; width: 320px; height: calc(100vh - 48px); transition: left 0.3s ease; z-index: 1050; overflow-y: auto;">
+        <div class="d-flex flex-column gap-3 mt-2">
+            <h5 class="fw-bold mb-3" style="color: #5381FF;">Menu de Navegação</h5>
+            
+            <!-- Card 1: Garagem -->
+            <div class="card card-custom p-3 border-0 shadow-sm"
+                style="background-color: #ffffff; color: #323232; cursor: pointer;"
+                onclick="window.location.href='#'">
+                <div class="d-flex align-items-center h-100">
+                    <div class="me-3 bg-light rounded d-flex align-items-center justify-content-center flex-shrink-0" style="width: 70px; height: 70px;">
+                        <i class="fa-solid fa-car fs-2" style="color: #5381FF;"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Garagem</h6>
+                        <p class="text-muted small m-0">Gerencie e visualize seus veículos cadastrados.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Histórico de Serviços -->
+            <div class="card card-custom p-3 border-0 shadow-sm"
+                style="background-color: #ffffff; color: #323232; cursor: pointer;"
+                onclick="window.location.href='#'">
+                <div class="d-flex align-items-center h-100">
+                    <div class="me-3 bg-light rounded d-flex align-items-center justify-content-center flex-shrink-0" style="width: 70px; height: 70px;">
+                        <i class="fa-solid fa-screwdriver-wrench fs-2" style="color: #5381FF;"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Histórico de Serviços</h6>
+                        <p class="text-muted small m-0">Acompanhe as manutenções e ordens passadas.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteúdo do Corpo -->
+    <main style="padding-top: 50px;">
+
+        <!-- Imagem Grande de Extremidade a Extremidade -->
+        <div class="container-fluid p-0 hero-section">
+            <img src="/frontend/assets/fotoInicial.svg"
+                alt="Oficina Mecânica" class="w-100 object-fit-cover" style="height: 450px;">
+        </div>
+
+        <!-- Retângulo de Estatísticas (#F97316) -->
+        <section class="container-fluid text-white py-3 px-4" style="background-color: #F97316;">
+            <div class="row text-center justify-content-around align-items-center">
+                <div class="col-md-4 d-flex align-items-center justify-content-center gap-2 my-2">
+                    <i class="fa-solid fa-users fa-2x"></i>
+                    <span class="fs-5 fw-bold">+1.500 Usuários Atendidos</span>
+                </div>
+                <div class="col-md-4 d-flex align-items-center justify-content-center gap-2 my-2">
+                    <i class="fa-solid fa-wrench fa-2x"></i>
+                    <span class="fs-5 fw-bold">10 Anos de Experiência</span>
+                </div>
+                <div class="col-md-4 d-flex align-items-center justify-content-center gap-2 my-2">
+                    <i class="fa-solid fa-heart fa-2x"></i>
+                    <span class="fs-5 fw-bold">98% Satisfação dos Clientes</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção de Agendamento -->
+        <section class="container my-5">
+            <!-- Faixa Retangular de Título (#5381FF) -->
+            <div class="text-white text-center py-2 rounded-top fw-bold fs-4 shadow-sm"
+                style="background-color: #5381FF;">
+                Agendamento
+            </div>
+
+            <!-- Grupo de Cards -->
+            <div class="bg-white p-4 rounded-bottom shadow-sm border border-top-0">
+                <div class="row g-4 align-items-stretch">
+
+                    <!-- Lado Esquerdo: Dois cards menores empilhados -->
+                    <div class="col-lg-6 d-flex flex-column gap-4">
+                        <!-- Card Profissionais -->
+                        <div class="card card-custom flex-grow-1 p-3 border-0 shadow-sm"
+                            style="background-color: #ffffff; color: #323232; cursor: pointer;"
+                            onclick="window.location.href='#'">
+                            <div class="d-flex align-items-center h-100">
+                                <div class="me-3 bg-light rounded overflow-hidden flex-shrink-0" style="width: 80px; height: 80px;">
+                                    <img src="/frontend/assets/profissionaisCard.svg" alt="Profissionais" class="w-100 h-100 object-fit-cover">
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-1">Profissionais</h5>
+                                    <p class="text-muted small m-0">Conheça nossos critérios de seleção e seriedade
+                                        empresarial.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Serviços -->
+                        <div class="card card-custom flex-grow-1 p-3 border-0 shadow-sm"
+                            style="background-color: #ffffff; color: #323232; cursor: pointer;"
+                            onclick="window.location.href='#'">
+                            <div class="d-flex align-items-center h-100">
+                                <div class="me-3 bg-light rounded overflow-hidden flex-shrink-0" style="width: 80px; height: 80px;">
+                                    <img src="/frontend/assets/servicosCard.svg" alt="Serviços" class="w-100 h-100 object-fit-cover">
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-1">Serviços</h5>
+                                    <p class="text-muted small m-0">Explore a lista completa de serviços cobertos pela
+                                        nossa oficina.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lado Direito: Card Maior -->
+                    <div class="col-lg-6">
+                        <div class="card card-custom h-100 p-4 border-0 shadow-sm d-flex flex-column justify-content-between"
+                            style="background-color: #ffffff; color: #323232;">
+                            <div>
+                                <div class="mb-3 overflow-hidden rounded" style="height: 200px;">
+                                    <img src="/frontend/assets/agendamentoCard.svg"
+                                        alt="Agendamento" class="w-100 h-100 object-fit-cover">
+                                </div>
+                                <h4 class="fw-bold">Faça sua Avaliação e Agendamento</h4>
+                                <p class="text-muted">Garanta o melhor atendimento para o seu veículo de forma rápida e
+                                    segura com profissionais qualificados.</p>
+                            </div>
+                            <!-- Botão Agendar Agora com Validação de Login -->
+                            <button onclick="verificarLoginEAgendar()" class="btn text-white fw-bold py-2 mt-3 border-0"
+                                style="background-color: #F97316;">Agendar Agora</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Dividido em Duas Partes -->
+    <footer class="mt-5">
+        <div class="container-fluid text-white py-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-center"
+            style="background-color: #5381FF;">
+            <div class="fw-semibold mb-2 mb-md-0">
+                Contata-nos através de nossas redes oficiais!
+            </div>
+            <div class="d-flex gap-3 fs-5">
+                <a href="#" class="text-white"><i class="fa-brands fa-facebook"></i></a>
+                <a href="#" class="text-white"><i class="fa-brands fa-instagram"></i></a>
+                <a href="#" class="text-white"><i class="fa-brands fa-whatsapp"></i></a>
+                <a href="#" class="text-white"><i class="fa-solid fa-envelope me-2"></i></a>
+            </div>
+        </div>
+
+        <div class="container-fluid text-white py-4 px-4" style="background-color: #F97316;">
+            <div class="row text-center text-md-start">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <h5 class="fw-bold mb-3">Sobre nós</h5>
+                    <p class="small text-light">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio.</p>
+                </div>
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <h5 class="fw-bold mb-3">Links úteis</h5>
+                    <p class="small text-light">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="fw-bold mb-3">Contato</h5>
+                    <ul class="list-unstyled small d-flex flex-column gap-2">
+                        <li><i class="fa-solid fa-house me-2"></i> Localização: Rua Exemplo, 123 - SP</li>
+                        <li><i class="fa-brands fa-whatsapp me-2"></i> Whatsapp: (11) 99999-9999</li>
+                        <li><i class="fa-solid fa-envelope me-2"></i> E-mail: contato@vibemechanics.com</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts de Controle -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const usuarioSalvo = localStorage.getItem("usuarioLogado");
+            const areaAuth = document.getElementById("area-auth");
+            
+            if (usuarioSalvo) {
+                const usuario = JSON.parse(usuarioSalvo);
+                areaAuth.innerHTML = `
+                    <div class="d-flex align-items-center gap-2 text-white justify-content-end">
+                        <span class="fw-semibold small text-truncate" style="max-width: 130px;"><i class="fa-solid fa-user me-1"></i> ${usuario.nome}</span>
+                        <button onclick="fazerLogout()" class="btn btn-outline-light btn-sm fw-semibold py-0 px-2">Sair</button>
+                    </div>
+                `;
+            }
+        });
+
+        // Alternar abertura/fechamento da aba lateral
+        function toggleSidebar() {
+            const sidebar = document.getElementById("sidebar-lateral");
+            if (sidebar.style.left === "0px") {
+                sidebar.style.left = "-320px";
+            } else {
+                sidebar.style.left = "0px";
+            }
+        }
+
+        // Função chamada ao clicar no botão "Agendar Agora"
+        function verificarLoginEAgendar() {
+            const usuarioSalvo = localStorage.getItem("usuarioLogado");
+
+            if (!usuarioSalvo) {
+                alert("Você precisa estar logado para realizar um agendamento!");
+                window.location.href = "/login";
+            } else {
+                window.location.href = "/ordensServico.html";
+            }
+        }
+
+        // Função para limpar a sessão e recarregar a página
+        function fazerLogout() {
+            localStorage.removeItem("usuarioLogado");
+            window.location.reload();
+        }
+    </script>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

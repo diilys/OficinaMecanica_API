@@ -1,0 +1,62 @@
+/* ============================================================
+   VARIÁVEIS DE CORES CENTRAIS DO SISTEMA
+   Altere aqui para mudar a cor principal de toda a aplicação
+   ============================================================ */
+:root {
+  --cor-principal: #0d6efd;       /* Cor base (Azul Bootstrap Padrão) */
+  --cor-principal-hover: #0b5ed7; /* Tom mais escuro para efeito hover */
+  --cor-texto-claro: #ffffff;    /* Cor do texto em botões/navbars */
+  --cor-fundo-pagina: #f8f9fa;   /* Cor de fundo leve */
+  --cor-sombra: rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================
+   ESTILIZAÇÃO GERAL E RECONSTRUÇÃO DAS CORES DO BOOTSTRAP
+   ============================================================ */
+body {
+  background-color: var(--cor-fundo-pagina);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Substitui a cor de fundo das barras de navegação */
+.navbar.bg-primary {
+  background-color: var(--cor-principal) !important;
+}
+
+/* Substitui a cor dos botões principais */
+.btn-primary {
+  background-color: var(--cor-principal) !important;
+  border-color: var(--cor-principal) !important;
+  color: var(--cor-texto-claro) !important;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+  background-color: var(--cor-principal-hover) !important;
+  border-color: var(--cor-principal-hover) !important;
+}
+
+/* Substitui o cabeçalho das tabelas */
+.table-primary {
+  --bs-table-bg: var(--cor-principal);
+  --bs-table-color: var(--cor-texto-claro);
+  background-color: var(--cor-principal) !important;
+  color: var(--cor-texto-claro) !important;
+}
+
+/* Estilo para os cards do Painel Principal (index.html) */
+.card-nav {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: none;
+}
+
+.card-nav:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px var(--cor-sombra) !important;
+}
+
+.card-nav .card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+}
