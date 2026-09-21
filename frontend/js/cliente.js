@@ -7,18 +7,27 @@ const idCliente = parametros.get("id");
 let clientes = [];
 
 // ======================================================
-// CADASTRAR OU ALTERAR CLIENTE
+// CADASTRAR OU ALTERAR CLIENTE / CONTA
 // ======================================================
 if (formulario) {
     formulario.addEventListener("submit", async function (evento) {
         evento.preventDefault();
         if (mensagem) mensagem.textContent = "";
 
+        const senha = document.getElementById("senha").value;
+        const confirmaSenha = document.getElementById("confirma-senha").value;
+
+        // Validação se as senhas coincidem
+        if (senha !== confirmaSenha) {
+            if (mensagem) mensagem.textContent = "As senhas não coincidem.";
+            return;
+        }
+
         const cliente = {
             nome: document.getElementById("nome").value,
             cpf: document.getElementById("cpf").value,
             email: document.getElementById("email").value,
-            telefone: document.getElementById("telefone").value
+            senha: senha
         };
 
         try {
@@ -38,11 +47,13 @@ if (formulario) {
                 });
             }
 
+            const resultado = await resposta.json();
+
             if (resposta.ok) {
-                if (mensagem) mensagem.textContent = idCliente ? "Cliente alterado com sucesso!" : "Cliente cadastrado com sucesso!";
+                if (mensagem) mensagem.textContent = idCliente ? "Conta alterada com sucesso!" : "Conta cadastrada com sucesso!";
                 if (!idCliente) formulario.reset();
             } else {
-                if (mensagem) mensagem.textContent = "Erro ao salvar cliente.";
+                if (mensagem) mensagem.textContent = "Erro: " + (resultado.detail || "Erro ao salvar cliente.");
             }
         } catch (erro) {
             if (mensagem) mensagem.textContent = "Erro de conexão com o servidor.";
@@ -51,7 +62,7 @@ if (formulario) {
 }
 
 // ======================================================
-// CARREGAR E EXIBIR CLIENTES
+// CARREGAR E EXIBIR CLIENTES (Caso usado no painel)
 // ======================================================
 async function carregarClientes() {
     const tabela = document.getElementById("listaClientes");
@@ -100,49 +111,6 @@ function exibirClientes(lista) {
     });
 }
 
-// ======================================================
-// LÓGICA DE FILTRAGEM EN TEMPO REAL
-// ======================================================
-function filtrarClientes() {
-    const campoElemento = document.getElementById("campoFiltro");
-    const textoElemento = document.getElementById("textoFiltro");
-
-    if (!campoElemento || !textoElemento) return;
-
-    const campo = campoElemento.value;
-    const texto = textoElemento.value.toLowerCase().trim();
-
-    const filtrados = clientes.filter(cli => {
-        const valor = cli[campo];
-        if (valor === null || valor === undefined) return false;
-        return String(valor).toLowerCase().includes(texto);
-    });
-
-    exibirClientes(filtrados);
-}
-
-function inicializarFiltros() {
-    const textoFiltro = document.getElementById("textoFiltro");
-    const campoFiltro = document.getElementById("campoFiltro");
-    const btnLimpar = document.getElementById("btnLimparFiltro");
-
-    if (textoFiltro) {
-        textoFiltro.addEventListener("input", filtrarClientes);
-        textoFiltro.addEventListener("keyup", filtrarClientes);
-    }
-
-    if (campoFiltro) {
-        campoFiltro.addEventListener("change", filtrarClientes);
-    }
-
-    if (btnLimpar) {
-        btnLimpar.addEventListener("click", function () {
-            if (textoFiltro) textoFiltro.value = "";
-            exibirClientes(clientes);
-        });
-    }
-}
-
 function alterarCliente(id) {
     window.location.href = `/cadastro-cliente?id=${id}`;
 }
@@ -165,5 +133,4 @@ async function excluirCliente(id, nome) {
 
 document.addEventListener("DOMContentLoaded", () => {
     carregarClientes();
-    inicializarFiltros();
 });

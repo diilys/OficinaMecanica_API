@@ -16,10 +16,13 @@ if (formulario) {
 
         const funcionario = {
             nome: document.getElementById("nome").value,
-            cargo: document.getElementById("cargo").value,
             cpf: document.getElementById("cpf").value,
+            telefone: document.getElementById("telefone").value,
+            cargo: document.getElementById("cargo").value,
+            estado_civil: document.getElementById("estado_civil").value,
+            endereco: document.getElementById("endereco").value,
             email: document.getElementById("email").value,
-            telefone: document.getElementById("telefone").value
+            senha: document.getElementById("senha").value
         };
 
         try {
@@ -99,7 +102,7 @@ function exibirFuncionarios(lista) {
         linha.innerHTML = `
             <td>${func.id}</td>
             <td class="fw-bold">${func.nome}</td>
-            <td>${func.cargo}</td>
+            <td>${func.cargo || 'N/A'}</td>
             <td>${func.cpf}</td>
             <td>${func.email}</td>
             <td class="text-end">

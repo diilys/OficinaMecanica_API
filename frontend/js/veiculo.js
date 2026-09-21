@@ -18,8 +18,8 @@ if (formulario) {
             placa: document.getElementById("placa").value,
             marca: document.getElementById("marca").value,
             modelo: document.getElementById("modelo").value,
-            ano: document.getElementById("ano").value,
-            cliente_id: document.getElementById("cliente_id").value
+            ano: parseInt(document.getElementById("ano").value, 10),
+            cliente_id: parseInt(document.getElementById("cliente_id").value, 10)
         };
 
         try {
@@ -39,11 +39,13 @@ if (formulario) {
                 });
             }
 
+            const resultado = await resposta.json();
+
             if (resposta.ok) {
                 if (mensagem) mensagem.textContent = idVeiculo ? "Veículo alterado com sucesso!" : "Veículo cadastrado!";
                 if (!idVeiculo) formulario.reset();
             } else {
-                if (mensagem) mensagem.textContent = "Erro ao salvar os dados do veículo.";
+                if (mensagem) mensagem.textContent = "Erro: " + (resultado.detail || "Erro ao salvar os dados do veículo.");
             }
         } catch (erro) {
             if (mensagem) mensagem.textContent = "Erro na conexão.";
