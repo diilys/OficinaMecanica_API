@@ -1,305 +1,649 @@
 # Configurando o Banco de Dados
 * Crie o banco de dados:
 ~~~
--- ============================================================
--- 1. CRIAÇÃO DO BANCO DE DADOS E TABELAS (COM ADMIN SEPARADO)
--- ============================================================
-CREATE DATABASE IF NOT EXISTS Oficina;
+CREATE DATABASE IF NOT EXISTS Oficina
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+
 USE Oficina;
 
-CREATE TABLE cliente(
+
+-- Usuários
+CREATE TABLE usuario (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
-    cpf VARCHAR(14) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    nivel VARCHAR(50) NOT NULL DEFAULT 'cliente'
+    email VARCHAR(100) NOT NULL UNIQUE,
+    senha_hash VARCHAR(255) NOT NULL,
+    tipo ENUM('cliente', 'funcionario', 'admin') NOT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE funcionario(
+
+-- Sessões autenticadas
+-- O navegador recebe o token original; o banco guarda apenas o hash do token.
+CREATE TABLE sessao (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    cpf VARCHAR(14) UNIQUE NOT NULL,
+    token_hash CHAR(64) NOT NULL UNIQUE,
+    usuario_id INT NOT NULL,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expira_em DATETIME NOT NULL,
+    CONSTRAINT fk_sessao_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE,
+    INDEX idx_sessao_usuario (usuario_id),
+    INDEX idx_sessao_expira (expira_em)
+);
+
+
+-- Clientes
+CREATE TABLE cliente (
+    usuario_id INT PRIMARY KEY,
+    cpf VARCHAR(14) NOT NULL UNIQUE,
+
+    CONSTRAINT fk_cliente_usuario
+        FOREIGN KEY (usuario_id)
+        REFERENCES usuario(id)
+        ON DELETE RESTRICT
+);
+
+
+-- Funcionários
+CREATE TABLE funcionario (
+    usuario_id INT PRIMARY KEY,
+    cpf VARCHAR(14) NOT NULL UNIQUE,
     telefone VARCHAR(20),
     estado_civil VARCHAR(30),
     endereco VARCHAR(200),
     cargo VARCHAR(50),
-    email VARCHAR(100) UNIQUE NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    nivel VARCHAR(50) NOT NULL DEFAULT 'funcionario'
+
+    CONSTRAINT fk_funcionario_usuario
+        FOREIGN KEY (usuario_id)
+        REFERENCES usuario(id)
+        ON DELETE RESTRICT
 );
 
--- Tabela exclusiva para o Admin / Operador do Sistema
-CREATE TABLE admin(
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    nivel VARCHAR(50) NOT NULL DEFAULT 'admin'
-);
 
-CREATE TABLE veiculo(
+-- Veículos
+CREATE TABLE veiculo (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    chassi VARCHAR(30) UNIQUE NOT NULL,
-    placa VARCHAR(10) UNIQUE NOT NULL,
+    placa VARCHAR(10) NOT NULL UNIQUE,
     marca VARCHAR(50) NOT NULL,
     modelo VARCHAR(50) NOT NULL,
     ano INT NOT NULL,
     cliente_id INT NOT NULL,
 
     CONSTRAINT fk_veiculo_cliente
-        FOREIGN KEY(cliente_id)
-        REFERENCES cliente(id)
-        ON DELETE CASCADE
+        FOREIGN KEY (cliente_id)
+        REFERENCES cliente(usuario_id)
+        ON DELETE RESTRICT
 );
 
-CREATE TABLE servico(
+
+-- Serviços
+CREATE TABLE servico (
     id INT AUTO_INCREMENT PRIMARY KEY,
     descricao VARCHAR(200) NOT NULL,
-    valor_mao_obra DECIMAL(10,2) NOT NULL
+    valor_mao_obra DECIMAL(10,2) NOT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT chk_servico_valor
+        CHECK (valor_mao_obra >= 0)
 );
 
-CREATE TABLE peca(
+
+-- Peças
+CREATE TABLE peca (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(200) NOT NULL,
     marca VARCHAR(100),
     fabricante VARCHAR(100),
     preco_compra DECIMAL(10,2) NOT NULL,
     preco_venda DECIMAL(10,2) NOT NULL,
-    quantidade_estoque INT DEFAULT 0
+    quantidade_estoque INT NOT NULL DEFAULT 0,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT chk_peca_preco_compra
+        CHECK (preco_compra >= 0),
+
+    CONSTRAINT chk_peca_preco_venda
+        CHECK (preco_venda >= 0),
+
+    CONSTRAINT chk_peca_estoque
+        CHECK (quantidade_estoque >= 0)
 );
 
-CREATE TABLE agendamento(
+
+-- Agendamentos
+CREATE TABLE agendamento (
     id INT AUTO_INCREMENT PRIMARY KEY,
     veiculo_id INT NOT NULL,
-    data_agendamento DATE NOT NULL,
-    status VARCHAR(30) DEFAULT 'Agendado',
+    data_hora DATETIME NOT NULL,
+    status ENUM(
+        'agendado',
+        'confirmado',
+        'concluido',
+        'cancelado'
+    ) NOT NULL DEFAULT 'agendado',
+    observacoes VARCHAR(300),
 
     CONSTRAINT fk_agendamento_veiculo
-        FOREIGN KEY(veiculo_id)
+        FOREIGN KEY (veiculo_id)
         REFERENCES veiculo(id)
-        ON DELETE CASCADE
+        ON DELETE RESTRICT
 );
 
-CREATE TABLE ordem_servico(
+
+-- Ordens de serviço
+CREATE TABLE ordem_servico (
     id INT AUTO_INCREMENT PRIMARY KEY,
     descricao_servico VARCHAR(300) NOT NULL,
-    data_abertura DATE NOT NULL,
-    data_fechamento DATE,
-    status VARCHAR(30) DEFAULT 'Pendente',
-    valor_total DECIMAL(10,2) DEFAULT 0,
+    data_abertura DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_fechamento DATETIME,
+    status ENUM(
+        'pendente',
+        'em_andamento',
+        'concluida',
+        'cancelada'
+    ) NOT NULL DEFAULT 'pendente',
+    valor_base DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    valor_total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     observacoes VARCHAR(300),
     veiculo_id INT NOT NULL,
     funcionario_id INT,
 
     CONSTRAINT fk_os_veiculo
-        FOREIGN KEY(veiculo_id)
+        FOREIGN KEY (veiculo_id)
         REFERENCES veiculo(id)
-        ON DELETE CASCADE,
+        ON DELETE RESTRICT,
 
     CONSTRAINT fk_os_funcionario
-        FOREIGN KEY(funcionario_id)
-        REFERENCES funcionario(id)
-        ON DELETE SET NULL
+        FOREIGN KEY (funcionario_id)
+        REFERENCES funcionario(usuario_id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT chk_os_valor_base
+        CHECK (valor_base >= 0),
+
+    CONSTRAINT chk_os_valor_total
+        CHECK (valor_total >= 0)
 );
 
-CREATE TABLE pagamento(
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    valor DECIMAL(10,2) NOT NULL,
-    metodo_pagamento VARCHAR(50) NOT NULL,
-    data_pagamento DATE NOT NULL,
-    status_pagamento VARCHAR(30) NOT NULL,
-    os_id INT UNIQUE,
 
-    CONSTRAINT fk_pagamento_os
-        FOREIGN KEY(os_id)
+-- Peças utilizadas nas ordens de serviço
+CREATE TABLE os_pecas (
+    os_id INT NOT NULL,
+    peca_id INT NOT NULL,
+    quantidade INT NOT NULL DEFAULT 1,
+    valor_unitario DECIMAL(10,2) NOT NULL,
+
+    PRIMARY KEY (os_id, peca_id),
+
+    CONSTRAINT fk_ospeca_os
+        FOREIGN KEY (os_id)
         REFERENCES ordem_servico(id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_ospeca_peca
+        FOREIGN KEY (peca_id)
+        REFERENCES peca(id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT chk_ospeca_quantidade
+        CHECK (quantidade > 0),
+
+    CONSTRAINT chk_ospeca_valor
+        CHECK (valor_unitario >= 0)
 );
 
-CREATE TABLE os_pecas(
-    os_id INT,
-    peca_id INT,
-    quantidade INT DEFAULT 1,
 
-    PRIMARY KEY(os_id, peca_id),
+-- Serviços realizados nas ordens de serviço
+CREATE TABLE os_servicos (
+    os_id INT NOT NULL,
+    servico_id INT NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
 
-    FOREIGN KEY(os_id) REFERENCES ordem_servico(id) ON DELETE CASCADE,
-    FOREIGN KEY(peca_id) REFERENCES peca(id) ON DELETE CASCADE
-);
-
-CREATE TABLE os_servicos(
-    os_id INT,
-    servico_id INT,
-
-    PRIMARY KEY(os_id, servico_id),
+    PRIMARY KEY (os_id, servico_id),
 
     CONSTRAINT fk_osservico_os
-        FOREIGN KEY(os_id)
+        FOREIGN KEY (os_id)
         REFERENCES ordem_servico(id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_osservico_servico
-        FOREIGN KEY(servico_id)
+        FOREIGN KEY (servico_id)
         REFERENCES servico(id)
-        ON DELETE CASCADE
+        ON DELETE RESTRICT,
+
+    CONSTRAINT chk_osservico_valor
+        CHECK (valor >= 0)
 );
 
+
+-- Pagamentos
+CREATE TABLE pagamento (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    os_id INT NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
+    metodo_pagamento ENUM(
+        'dinheiro',
+        'pix',
+        'credito',
+        'debito',
+        'outro'
+    ) NOT NULL,
+    data_pagamento DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status ENUM(
+        'pendente',
+        'aprovado',
+        'cancelado',
+        'estornado'
+    ) NOT NULL DEFAULT 'pendente',
+
+    CONSTRAINT fk_pagamento_os
+        FOREIGN KEY (os_id)
+        REFERENCES ordem_servico(id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT chk_pagamento_valor
+        CHECK (valor > 0)
+);
+
+
 -- ============================================================
--- 2. VIEWS
+-- VIEWS
 -- ============================================================
 
+-- Exibe o estoque de peças ativas
 CREATE OR REPLACE VIEW vw_estoque_pecas AS
-SELECT 
+SELECT
     id,
     nome,
     marca,
+    fabricante,
     quantidade_estoque,
+    preco_compra,
     preco_venda,
     ROUND(preco_venda - preco_compra, 2) AS margem_lucro_unidade
-FROM peca;
+FROM peca
+WHERE ativo = TRUE;
 
+
+-- Exibe os veículos com os dados de seus clientes
 CREATE OR REPLACE VIEW vw_veiculos_detalhados AS
-SELECT 
+SELECT
     v.id,
     v.placa,
     v.marca,
     v.modelo,
     v.ano,
     v.cliente_id,
-    c.nome AS cliente_nome
+    u.nome AS cliente_nome,
+    c.cpf AS cliente_cpf,
+    u.email AS cliente_email,
+    u.ativo AS cliente_ativo
 FROM veiculo v
-JOIN cliente c ON v.cliente_id = c.id;
+JOIN cliente c
+    ON v.cliente_id = c.usuario_id
+JOIN usuario u
+    ON c.usuario_id = u.id;
 
+
+-- Exibe os clientes e seus dados de usuário
+CREATE OR REPLACE VIEW vw_clientes_detalhados AS
+SELECT
+    u.id,
+    u.nome,
+    c.cpf,
+    u.email,
+    u.ativo,
+    u.criado_em
+FROM usuario u
+JOIN cliente c
+    ON u.id = c.usuario_id;
+
+
+-- Exibe os funcionários e seus dados de usuário
+CREATE OR REPLACE VIEW vw_funcionarios_detalhados AS
+SELECT
+    u.id,
+    u.nome,
+    f.cpf,
+    f.telefone,
+    f.estado_civil,
+    f.endereco,
+    f.cargo,
+    u.email,
+    u.ativo,
+    u.criado_em
+FROM usuario u
+JOIN funcionario f
+    ON u.id = f.usuario_id;
+
+
+-- Exibe as ordens de serviço com cliente, veículo e funcionário
 CREATE OR REPLACE VIEW vw_ordem_servico_detalhada AS
-SELECT 
+SELECT
     os.id AS os_id,
     os.veiculo_id,
     os.data_abertura,
     os.data_fechamento,
     os.descricao_servico,
     os.status,
-    c.nome AS cliente_nome,
+    os.valor_base,
+
+    uc.nome AS cliente_nome,
     c.cpf AS cliente_cpf,
+
     v.modelo AS veiculo_modelo,
     v.placa AS veiculo_placa,
-    f.nome AS funcionario_mecanico,
-    COALESCE(SUM(p.preco_venda * osp.quantidade), 0) AS total_pecas,
-    COALESCE(SUM(s.valor_mao_obra), 0) AS total_servicos,
+
+    uf.nome AS funcionario_mecanico,
+
+    COALESCE(
+        (
+            SELECT SUM(op.quantidade * op.valor_unitario)
+            FROM os_pecas op
+            WHERE op.os_id = os.id
+        ),
+        0
+    ) AS total_pecas,
+
+    COALESCE(
+        (
+            SELECT SUM(oss.valor)
+            FROM os_servicos oss
+            WHERE oss.os_id = os.id
+        ),
+        0
+    ) AS total_servicos,
+
     os.valor_total
+
 FROM ordem_servico os
-JOIN veiculo v ON os.veiculo_id = v.id
-JOIN cliente c ON v.cliente_id = c.id
-LEFT JOIN funcionario f ON os.funcionario_id = f.id
-LEFT JOIN os_pecas osp ON os.id = osp.os_id
-LEFT JOIN peca p ON osp.peca_id = p.id
-LEFT JOIN os_servicos oss ON os.id = oss.os_id
-LEFT JOIN servico s ON oss.servico_id = s.id
-GROUP BY 
-    os.id, 
-    os.veiculo_id, 
-    os.data_abertura, 
-    os.data_fechamento, 
-    os.descricao_servico, 
-    os.status, 
-    os.valor_total,
-    c.nome, 
-    c.cpf, 
-    v.modelo, 
-    v.placa, 
-    f.nome;
+
+JOIN veiculo v
+    ON os.veiculo_id = v.id
+
+JOIN cliente c
+    ON v.cliente_id = c.usuario_id
+
+JOIN usuario uc
+    ON c.usuario_id = uc.id
+
+LEFT JOIN funcionario f
+    ON os.funcionario_id = f.usuario_id
+
+LEFT JOIN usuario uf
+    ON f.usuario_id = uf.id;
+
 
 -- ============================================================
--- 3. STORED FUNCTIONS
+-- FUNCTIONS
 -- ============================================================
+
 DELIMITER //
 
-CREATE FUNCTION fn_calcular_total_os(p_os_id INT) 
+
+-- Calcula o valor total de uma ordem de serviço
+CREATE FUNCTION fn_calcular_total_os(p_os_id INT)
 RETURNS DECIMAL(10,2)
-DETERMINISTIC
+READS SQL DATA
 BEGIN
+    DECLARE v_valor_base DECIMAL(10,2) DEFAULT 0;
     DECLARE v_total_pecas DECIMAL(10,2) DEFAULT 0;
     DECLARE v_total_servicos DECIMAL(10,2) DEFAULT 0;
 
-    SELECT COALESCE(SUM(p.preco_venda * osp.quantidade), 0)
+    SELECT COALESCE(valor_base, 0)
+    INTO v_valor_base
+    FROM ordem_servico
+    WHERE id = p_os_id;
+
+    SELECT COALESCE(
+        SUM(quantidade * valor_unitario),
+        0
+    )
     INTO v_total_pecas
-    FROM os_pecas osp
-    JOIN peca p ON osp.peca_id = p.id
-    WHERE osp.os_id = p_os_id;
+    FROM os_pecas
+    WHERE os_id = p_os_id;
 
-    SELECT COALESCE(SUM(s.valor_mao_obra), 0)
+
+    SELECT COALESCE(
+        SUM(valor),
+        0
+    )
     INTO v_total_servicos
-    FROM os_servicos oss
-    JOIN servico s ON oss.servico_id = s.id
-    WHERE oss.os_id = p_os_id;
+    FROM os_servicos
+    WHERE os_id = p_os_id;
 
-    RETURN (v_total_pecas + v_total_servicos);
+
+    RETURN v_valor_base + v_total_pecas + v_total_servicos;
 END //
 
+
+-- Calcula o total gasto por um cliente em ordens concluídas
 CREATE FUNCTION fn_calcular_total_gasto_cliente(p_cliente_id INT)
 RETURNS DECIMAL(10,2)
-DETERMINISTIC
+READS SQL DATA
 BEGIN
     DECLARE v_total DECIMAL(10,2) DEFAULT 0;
 
     SELECT COALESCE(SUM(os.valor_total), 0)
     INTO v_total
     FROM ordem_servico os
-    JOIN veiculo v ON os.veiculo_id = v.id
-    WHERE v.cliente_id = p_cliente_id AND os.status = 'Concluído';
+
+    JOIN veiculo v
+        ON os.veiculo_id = v.id
+
+    WHERE v.cliente_id = p_cliente_id
+      AND os.status = 'concluida';
 
     RETURN v_total;
 END //
 
+
 DELIMITER ;
 
+
 -- ============================================================
--- 4. STORED PROCEDURES
+-- PROCEDURES
 -- ============================================================
+
 DELIMITER //
 
+
+-- Cadastra um novo cliente e seu usuário
 CREATE PROCEDURE sp_cadastrar_cliente(
     IN p_nome VARCHAR(100),
     IN p_cpf VARCHAR(14),
     IN p_email VARCHAR(100),
-    IN p_senha VARCHAR(255),
-    IN p_nivel VARCHAR(50),
+    IN p_senha_hash VARCHAR(255),
     OUT p_id INT
 )
 BEGIN
-    INSERT INTO cliente (nome, cpf, email, senha, nivel)
-    VALUES (p_nome, p_cpf, p_email, p_senha, COALESCE(p_nivel, 'cliente'));
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    INSERT INTO usuario (
+        nome,
+        email,
+        senha_hash,
+        tipo
+    )
+    VALUES (
+        p_nome,
+        p_email,
+        p_senha_hash,
+        'cliente'
+    );
+
     SET p_id = LAST_INSERT_ID();
+
+    INSERT INTO cliente (
+        usuario_id,
+        cpf
+    )
+    VALUES (
+        p_id,
+        p_cpf
+    );
+
+    COMMIT;
 END //
 
+
+-- Altera os dados de um cliente
 CREATE PROCEDURE sp_alterar_cliente(
     IN p_id INT,
     IN p_nome VARCHAR(100),
     IN p_cpf VARCHAR(14),
-    IN p_email VARCHAR(100),
-    IN p_senha VARCHAR(255),
-    IN p_nivel VARCHAR(50)
+    IN p_email VARCHAR(100)
 )
 BEGIN
-    UPDATE cliente 
-    SET nome = p_nome, cpf = p_cpf, email = p_email, senha = p_senha, nivel = COALESCE(p_nivel, nivel)
-    WHERE id = p_id;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    UPDATE usuario
+    SET
+        nome = p_nome,
+        email = p_email
+    WHERE id = p_id
+      AND tipo = 'cliente';
+
+    UPDATE cliente
+    SET cpf = p_cpf
+    WHERE usuario_id = p_id;
+
+    COMMIT;
 END //
 
--- Procedure para cadastrar novos administradores no banco
-CREATE PROCEDURE sp_cadastrar_admin(
+
+-- Altera a senha de um usuário
+CREATE PROCEDURE sp_alterar_senha(
+    IN p_usuario_id INT,
+    IN p_nova_senha_hash VARCHAR(255)
+)
+BEGIN
+    UPDATE usuario
+    SET senha_hash = p_nova_senha_hash
+    WHERE id = p_usuario_id;
+END //
+
+
+-- Inativa uma conta sem apagar seu histórico
+CREATE PROCEDURE sp_inativar_usuario(
+    IN p_usuario_id INT
+)
+BEGIN
+    UPDATE usuario
+    SET ativo = FALSE
+    WHERE id = p_usuario_id;
+END //
+
+
+-- Reativa uma conta anteriormente inativada
+CREATE PROCEDURE sp_reativar_usuario(
+    IN p_usuario_id INT
+)
+BEGIN
+    UPDATE usuario
+    SET ativo = TRUE
+    WHERE id = p_usuario_id;
+END //
+
+
+-- Cadastra um novo funcionário e seu usuário
+CREATE PROCEDURE sp_cadastrar_funcionario(
     IN p_nome VARCHAR(100),
+    IN p_cpf VARCHAR(14),
+    IN p_telefone VARCHAR(20),
+    IN p_estado_civil VARCHAR(30),
+    IN p_endereco VARCHAR(200),
+    IN p_cargo VARCHAR(50),
     IN p_email VARCHAR(100),
-    IN p_senha VARCHAR(255),
-    IN p_nivel VARCHAR(50),
+    IN p_senha_hash VARCHAR(255),
     OUT p_id INT
 )
 BEGIN
-    INSERT INTO admin (nome, email, senha, nivel)
-    VALUES (p_nome, p_email, p_senha, COALESCE(p_nivel, 'admin'));
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    INSERT INTO usuario (
+        nome,
+        email,
+        senha_hash,
+        tipo
+    )
+    VALUES (
+        p_nome,
+        p_email,
+        p_senha_hash,
+        'funcionario'
+    );
+
+    SET p_id = LAST_INSERT_ID();
+
+    INSERT INTO funcionario (
+        usuario_id,
+        cpf,
+        telefone,
+        estado_civil,
+        endereco,
+        cargo
+    )
+    VALUES (
+        p_id,
+        p_cpf,
+        p_telefone,
+        p_estado_civil,
+        p_endereco,
+        p_cargo
+    );
+
+    COMMIT;
+END //
+
+
+-- Cadastra um administrador
+CREATE PROCEDURE sp_cadastrar_admin(
+    IN p_nome VARCHAR(100),
+    IN p_email VARCHAR(100),
+    IN p_senha_hash VARCHAR(255),
+    OUT p_id INT
+)
+BEGIN
+    INSERT INTO usuario (
+        nome,
+        email,
+        senha_hash,
+        tipo
+    )
+    VALUES (
+        p_nome,
+        p_email,
+        p_senha_hash,
+        'admin'
+    );
+
     SET p_id = LAST_INSERT_ID();
 END //
 
+
+-- Cadastra um veículo para um cliente
 CREATE PROCEDURE sp_cadastrar_veiculo(
     IN p_placa VARCHAR(10),
     IN p_marca VARCHAR(50),
@@ -309,15 +653,49 @@ CREATE PROCEDURE sp_cadastrar_veiculo(
     OUT p_id INT
 )
 BEGIN
-    DECLARE v_chassi VARCHAR(30);
-    SET v_chassi = CONCAT('AUTO_', REPLACE(p_placa, '-', ''), '_', FLOOR(RAND() * 10000));
+    DECLARE v_cliente_ativo BOOLEAN;
 
-    INSERT INTO veiculo (chassi, placa, marca, modelo, ano, cliente_id)
-    VALUES (v_chassi, p_placa, p_marca, p_modelo, p_ano, p_cliente_id);
-    
-    SET p_id = LAST_INSERT_ID();
+    SELECT u.ativo
+    INTO v_cliente_ativo
+    FROM cliente c
+    JOIN usuario u
+        ON c.usuario_id = u.id
+    WHERE c.usuario_id = p_cliente_id;
+
+    IF v_cliente_ativo IS NULL THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Cliente não encontrado.';
+
+    ELSEIF v_cliente_ativo = FALSE THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Não é possível cadastrar veículo para cliente inativo.';
+
+    ELSE
+
+        INSERT INTO veiculo (
+            placa,
+            marca,
+            modelo,
+            ano,
+            cliente_id
+        )
+        VALUES (
+            p_placa,
+            p_marca,
+            p_modelo,
+            p_ano,
+            p_cliente_id
+        );
+
+        SET p_id = LAST_INSERT_ID();
+
+    END IF;
 END //
 
+
+-- Adiciona uma peça à ordem e realiza a baixa do estoque
 CREATE PROCEDURE sp_adicionar_peca_os(
     IN p_os_id INT,
     IN p_peca_id INT,
@@ -325,116 +703,596 @@ CREATE PROCEDURE sp_adicionar_peca_os(
 )
 BEGIN
     DECLARE v_estoque_atual INT;
+    DECLARE v_preco DECIMAL(10,2);
+    DECLARE v_ativo BOOLEAN;
 
-    SELECT quantidade_estoque INTO v_estoque_atual
-    FROM peca WHERE id = p_peca_id;
+    IF p_quantidade <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'A quantidade deve ser maior que zero.';
+    END IF;
 
-    IF v_estoque_atual >= p_quantidade THEN
-        INSERT INTO os_pecas (os_id, peca_id, quantidade)
-        VALUES (p_os_id, p_peca_id, p_quantidade)
-        ON DUPLICATE KEY UPDATE quantidade = quantidade + p_quantidade;
+    SELECT
+        quantidade_estoque,
+        preco_venda,
+        ativo
+    INTO
+        v_estoque_atual,
+        v_preco,
+        v_ativo
+    FROM peca
+    WHERE id = p_peca_id
+    FOR UPDATE;
 
-        UPDATE ordem_servico 
-        SET valor_total = fn_calcular_total_os(p_os_id)
-        WHERE id = p_os_id;
-    ELSE
+
+    IF v_estoque_atual IS NULL THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Peça não encontrada.';
+
+    ELSEIF v_ativo = FALSE THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'A peça está inativa.';
+
+    ELSEIF v_estoque_atual < p_quantidade THEN
+
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Estoque insuficiente para a peça solicitada.';
+
+    ELSE
+
+        INSERT INTO os_pecas (
+            os_id,
+            peca_id,
+            quantidade,
+            valor_unitario
+        )
+        VALUES (
+            p_os_id,
+            p_peca_id,
+            p_quantidade,
+            v_preco
+        )
+
+        ON DUPLICATE KEY UPDATE
+            quantidade = quantidade + p_quantidade;
+
+
+        UPDATE peca
+        SET quantidade_estoque =
+            quantidade_estoque - p_quantidade
+        WHERE id = p_peca_id;
+
+
+        UPDATE ordem_servico
+        SET valor_total =
+            fn_calcular_total_os(p_os_id)
+        WHERE id = p_os_id;
+
     END IF;
 END //
 
-CREATE PROCEDURE sp_finalizar_os(
+
+-- Remove uma quantidade de peça da ordem e devolve ao estoque
+CREATE PROCEDURE sp_remover_peca_os(
     IN p_os_id INT,
-    IN p_metodo_pagamento VARCHAR(50)
+    IN p_peca_id INT,
+    IN p_quantidade INT
+)
+BEGIN
+    DECLARE v_quantidade_os INT;
+
+    IF p_quantidade <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'A quantidade deve ser maior que zero.';
+    END IF;
+
+
+    SELECT quantidade
+    INTO v_quantidade_os
+    FROM os_pecas
+    WHERE os_id = p_os_id
+      AND peca_id = p_peca_id
+    FOR UPDATE;
+
+
+    IF v_quantidade_os IS NULL THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Peça não encontrada nesta ordem de serviço.';
+
+    ELSEIF p_quantidade > v_quantidade_os THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Quantidade informada maior que a utilizada na ordem.';
+
+    ELSE
+
+        IF p_quantidade = v_quantidade_os THEN
+
+            DELETE FROM os_pecas
+            WHERE os_id = p_os_id
+              AND peca_id = p_peca_id;
+
+        ELSE
+
+            UPDATE os_pecas
+            SET quantidade = quantidade - p_quantidade
+            WHERE os_id = p_os_id
+              AND peca_id = p_peca_id;
+
+        END IF;
+
+
+        UPDATE peca
+        SET quantidade_estoque =
+            quantidade_estoque + p_quantidade
+        WHERE id = p_peca_id;
+
+
+        UPDATE ordem_servico
+        SET valor_total =
+            fn_calcular_total_os(p_os_id)
+        WHERE id = p_os_id;
+
+    END IF;
+END //
+
+
+-- Adiciona um serviço à ordem preservando o preço atual
+CREATE PROCEDURE sp_adicionar_servico_os(
+    IN p_os_id INT,
+    IN p_servico_id INT
+)
+BEGIN
+    DECLARE v_valor DECIMAL(10,2);
+    DECLARE v_ativo BOOLEAN;
+
+    SELECT
+        valor_mao_obra,
+        ativo
+    INTO
+        v_valor,
+        v_ativo
+    FROM servico
+    WHERE id = p_servico_id;
+
+
+    IF v_valor IS NULL THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Serviço não encontrado.';
+
+    ELSEIF v_ativo = FALSE THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'O serviço está inativo.';
+
+    ELSE
+
+        INSERT INTO os_servicos (
+            os_id,
+            servico_id,
+            valor
+        )
+        VALUES (
+            p_os_id,
+            p_servico_id,
+            v_valor
+        )
+
+        ON DUPLICATE KEY UPDATE
+            valor = valor;
+
+
+        UPDATE ordem_servico
+        SET valor_total =
+            fn_calcular_total_os(p_os_id)
+        WHERE id = p_os_id;
+
+    END IF;
+END //
+
+
+-- Remove um serviço da ordem
+CREATE PROCEDURE sp_remover_servico_os(
+    IN p_os_id INT,
+    IN p_servico_id INT
+)
+BEGIN
+    DELETE FROM os_servicos
+    WHERE os_id = p_os_id
+      AND servico_id = p_servico_id;
+
+
+    UPDATE ordem_servico
+    SET valor_total =
+        fn_calcular_total_os(p_os_id)
+    WHERE id = p_os_id;
+END //
+
+
+-- Finaliza uma ordem de serviço
+CREATE PROCEDURE sp_finalizar_os(
+    IN p_os_id INT
 )
 BEGIN
     DECLARE v_total DECIMAL(10,2);
 
     SET v_total = fn_calcular_total_os(p_os_id);
 
-    UPDATE ordem_servico 
-    SET status = 'Concluído',
-        data_fechamento = CURDATE(),
+    UPDATE ordem_servico
+    SET
+        status = 'concluida',
+        data_fechamento = CURRENT_TIMESTAMP,
         valor_total = v_total
     WHERE id = p_os_id;
-
-    INSERT INTO pagamento (valor, metodo_pagamento, data_pagamento, status_pagamento, os_id)
-    VALUES (v_total, p_metodo_pagamento, CURDATE(), 'Aprovado', p_os_id);
 END //
+
+
+-- Exclui uma ordem de serviço devolvendo as peças ao estoque
+CREATE PROCEDURE sp_excluir_os(
+    IN p_os_id INT
+)
+BEGIN
+    DECLARE v_existe INT DEFAULT 0;
+
+    SELECT COUNT(*)
+    INTO v_existe
+    FROM ordem_servico
+    WHERE id = p_os_id;
+
+    IF v_existe = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Ordem de serviço não encontrada.';
+    ELSE
+        UPDATE peca p
+        JOIN os_pecas op
+            ON op.peca_id = p.id
+        SET p.quantidade_estoque =
+            p.quantidade_estoque + op.quantidade
+        WHERE op.os_id = p_os_id;
+
+        DELETE FROM pagamento
+        WHERE os_id = p_os_id;
+
+        DELETE FROM ordem_servico
+        WHERE id = p_os_id;
+    END IF;
+END //
+
+
+-- Registra um pagamento para uma ordem de serviço
+CREATE PROCEDURE sp_registrar_pagamento(
+    IN p_os_id INT,
+    IN p_valor DECIMAL(10,2),
+    IN p_metodo_pagamento VARCHAR(20)
+)
+BEGIN
+    DECLARE v_metodo VARCHAR(20);
+
+    SET v_metodo = LOWER(p_metodo_pagamento);
+
+    IF p_valor <= 0 THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'O valor do pagamento deve ser maior que zero.';
+
+    ELSEIF v_metodo NOT IN (
+        'dinheiro',
+        'pix',
+        'credito',
+        'debito',
+        'outro'
+    ) THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Método de pagamento inválido.';
+
+    ELSE
+
+        INSERT INTO pagamento (
+            os_id,
+            valor,
+            metodo_pagamento,
+            status
+        )
+        VALUES (
+            p_os_id,
+            p_valor,
+            v_metodo,
+            'aprovado'
+        );
+
+    END IF;
+END //
+
 
 DELIMITER ;
 
+
 -- ============================================================
--- 5. TRIGGERS
+-- TRIGGERS
 -- ============================================================
+
 DELIMITER //
 
-CREATE TRIGGER trg_baixa_estoque_peca
+
+-- Atualiza o total da OS após alteração manual de peças
+CREATE TRIGGER trg_os_pecas_atualizar_total_insert
 AFTER INSERT ON os_pecas
 FOR EACH ROW
 BEGIN
-    UPDATE peca 
-    SET quantidade_estoque = quantidade_estoque - NEW.quantidade
-    WHERE id = NEW.peca_id;
+    UPDATE ordem_servico
+    SET valor_total = fn_calcular_total_os(NEW.os_id)
+    WHERE id = NEW.os_id;
 END //
 
-CREATE TRIGGER trg_estorno_estoque_peca
+
+-- Atualiza o total da OS após alteração da quantidade de peças
+CREATE TRIGGER trg_os_pecas_atualizar_total_update
+AFTER UPDATE ON os_pecas
+FOR EACH ROW
+BEGIN
+    UPDATE ordem_servico
+    SET valor_total = fn_calcular_total_os(NEW.os_id)
+    WHERE id = NEW.os_id;
+END //
+
+
+-- Atualiza o total da OS após remoção de peças
+CREATE TRIGGER trg_os_pecas_atualizar_total_delete
 AFTER DELETE ON os_pecas
 FOR EACH ROW
 BEGIN
-    UPDATE peca 
-    SET quantidade_estoque = quantidade_estoque + OLD.quantidade
-    WHERE id = OLD.peca_id;
+    UPDATE ordem_servico
+    SET valor_total = fn_calcular_total_os(OLD.os_id)
+    WHERE id = OLD.os_id;
 END //
+
+
+-- Atualiza o total da OS após adicionar um serviço
+CREATE TRIGGER trg_os_servicos_atualizar_total_insert
+AFTER INSERT ON os_servicos
+FOR EACH ROW
+BEGIN
+    UPDATE ordem_servico
+    SET valor_total = fn_calcular_total_os(NEW.os_id)
+    WHERE id = NEW.os_id;
+END //
+
+
+-- Atualiza o total da OS após alterar um serviço
+CREATE TRIGGER trg_os_servicos_atualizar_total_update
+AFTER UPDATE ON os_servicos
+FOR EACH ROW
+BEGIN
+    UPDATE ordem_servico
+    SET valor_total = fn_calcular_total_os(NEW.os_id)
+    WHERE id = NEW.os_id;
+END //
+
+
+-- Atualiza o total da OS após remover um serviço
+CREATE TRIGGER trg_os_servicos_atualizar_total_delete
+AFTER DELETE ON os_servicos
+FOR EACH ROW
+BEGIN
+    UPDATE ordem_servico
+    SET valor_total = fn_calcular_total_os(OLD.os_id)
+    WHERE id = OLD.os_id;
+END //
+
 
 DELIMITER ;
 
+
 -- ============================================================
--- 6. DADOS DE TESTE (INICIALIZAÇÃO)
+-- DADOS DE TESTE
 -- ============================================================
-INSERT INTO cliente (nome, cpf, email, senha, nivel) VALUES
-('João Silva', '111.222.333-44', 'joao.silva@email.com', '123456', 'cliente'),
-('Maria Oliveira', '555.666.777-88', 'maria.oliveira@email.com', '123456', 'cliente');
 
-INSERT INTO funcionario (nome, cpf, telefone, estado_civil, endereco, cargo, email, senha, nivel) VALUES
-('Carlos Souza', '999.888.777-66', '(11) 98888-7777', 'Casado(a)', 'Rua A, 123', 'Mecânico Chefe', 'carlos.mecanico@oficina.com', 'mecanico123', 'funcionario');
+-- Usuários de teste
+INSERT INTO usuario (
+    nome,
+    email,
+    senha_hash,
+    tipo
+)
+VALUES
+(
+    'João Silva',
+    'joao.silva@email.com',
+    '123456',
+    'cliente'
+),
+(
+    'Maria Oliveira',
+    'maria.oliveira@email.com',
+    '123456',
+    'cliente'
+),
+(
+    'Carlos Souza',
+    'carlos.mecanico@oficina.com',
+    'mecanico123',
+    'funcionario'
+),
+(
+    'Diana (Admin)',
+    'admin@gmail.com',
+    'admin',
+    'admin'
+);
 
 
--- Inserção do Administrador Inicial
-INSERT INTO admin (nome, email, senha, nivel) VALUES
-('Diana (Admin)', 'admin@gmail.com', 'admin', 'admin');
+-- Clientes de teste
+INSERT INTO cliente (
+    usuario_id,
+    cpf
+)
+VALUES
+(1, '111.222.333-44'),
+(2, '555.666.777-88');
 
 
-INSERT INTO veiculo (chassi, placa, marca, modelo, ano, cliente_id) VALUES
-('9BWZZZ377VT001001', 'ABC1D23', 'Volkswagen', 'Gol 1.0', 2020, 1),
-('9BD11122233344455', 'XYZ9876', 'Fiat', 'Uno Mille', 2018, 2);
+-- Funcionário de teste
+INSERT INTO funcionario (
+    usuario_id,
+    cpf,
+    telefone,
+    estado_civil,
+    endereco,
+    cargo
+)
+VALUES
+(
+    3,
+    '999.888.777-66',
+    '(11) 98888-7777',
+    'Casado(a)',
+    'Rua A, 123',
+    'Mecânico Chefe'
+);
 
-INSERT INTO servico (descricao, valor_mao_obra) VALUES
-('Troca de Óleo e Filtro', 80.00),
-('Alinhamento e Balanceamento', 120.00);
 
-INSERT INTO peca (nome, marca, fabricante, preco_compra, preco_venda, quantidade_estoque) VALUES
-('Óleo Sintético 5W30 1L', 'Havoline', 'Texaco', 25.00, 45.00, 50),
-('Filtro de Óleo Engine', 'Fram', 'Sogefi', 15.00, 30.00, 30);
+-- Veículos de teste
+INSERT INTO veiculo (
+    placa,
+    marca,
+    modelo,
+    ano,
+    cliente_id
+)
+VALUES
+(
+    'ABC1D23',
+    'Volkswagen',
+    'Gol 1.0',
+    2020,
+    1
+),
+(
+    'XYZ9876',
+    'Fiat',
+    'Uno Mille',
+    2018,
+    2
+);
 
-INSERT INTO agendamento (veiculo_id, data_agendamento, status) VALUES
-(1, '2026-03-25', 'Agendado'),
-(2, '2026-03-26', 'Concluído');
 
-INSERT INTO ordem_servico (descricao_servico, data_abertura, data_fechamento, status, valor_total, observacoes, veiculo_id, funcionario_id) VALUES
-('Revisão Geral de Rotina', '2026-03-20', NULL, 'Em andamento', 155.00, 'Cliente relatou barulho leve na suspensão', 1, 1),
-('Troca de Óleo Completa', '2026-03-18', '2026-03-18', 'Concluído', 155.00, 'Serviço efetuado sem intercorrências', 2, 1);
+-- Serviços de teste
+INSERT INTO servico (
+    descricao,
+    valor_mao_obra
+)
+VALUES
+(
+    'Troca de Óleo e Filtro',
+    80.00
+),
+(
+    'Alinhamento e Balanceamento',
+    120.00
+);
 
-INSERT INTO os_pecas (os_id, peca_id, quantidade) VALUES
-(1, 1, 1),
-(2, 1, 1);
 
-INSERT INTO os_servicos (os_id, servico_id) VALUES
-(1, 1),
-(2, 1);
+-- Peças de teste
+INSERT INTO peca (
+    nome,
+    marca,
+    fabricante,
+    preco_compra,
+    preco_venda,
+    quantidade_estoque
+)
+VALUES
+(
+    'Óleo Sintético 5W30 1L',
+    'Havoline',
+    'Texaco',
+    25.00,
+    45.00,
+    50
+),
+(
+    'Filtro de Óleo Engine',
+    'Fram',
+    'Sogefi',
+    15.00,
+    30.00,
+    30
+);
 
-INSERT INTO pagamento (valor, metodo_pagamento, data_pagamento, status_pagamento, os_id) VALUES
-(155.00, 'PIX', '2026-03-18', 'Aprovado', 2);
+
+-- Agendamentos de teste
+INSERT INTO agendamento (
+    veiculo_id,
+    data_hora,
+    status
+)
+VALUES
+(
+    1,
+    '2026-09-25 09:00:00',
+    'agendado'
+),
+(
+    2,
+    '2026-09-26 14:00:00',
+    'confirmado'
+);
+
+
+-- Ordens de serviço de teste
+INSERT INTO ordem_servico (
+    descricao_servico,
+    data_abertura,
+    data_fechamento,
+    status,
+    valor_total,
+    observacoes,
+    veiculo_id,
+    funcionario_id
+)
+VALUES
+(
+    'Revisão Geral de Rotina',
+    '2026-09-20 08:00:00',
+    NULL,
+    'em_andamento',
+    0.00,
+    'Cliente relatou barulho leve na suspensão',
+    1,
+    3
+),
+(
+    'Troca de Óleo Completa',
+    '2026-09-18 10:00:00',
+    '2026-09-18 11:30:00',
+    'concluida',
+    0.00,
+    'Serviço efetuado sem intercorrências',
+    2,
+    3
+);
+
+
+-- Peças utilizadas nas ordens de teste
+CALL sp_adicionar_peca_os(1, 1, 1);
+CALL sp_adicionar_peca_os(2, 1, 1);
+
+
+-- Serviços utilizados nas ordens de teste
+CALL sp_adicionar_servico_os(1, 1);
+CALL sp_adicionar_servico_os(2, 1);
+
+
+-- Pagamento de teste
+CALL sp_registrar_pagamento(
+    2,
+    fn_calcular_total_os(2),
+    'pix'
+);
 ~~~
 &emsp;Execute os comandos.
 
