@@ -18,14 +18,11 @@ document.getElementById("form-login").addEventListener("submit", async function(
         const resultado = await resposta.json();
 
         if (resposta.ok) {
-            // Guarda os dados do usuário logado no localStorage
-            localStorage.setItem("usuarioLogado", JSON.stringify(resultado));
-            
             // Redirecionamento baseado no nível de acesso retornado pela API
             if (resultado.nivel === "admin") {
                 window.location.href = "/painel-admin";
             } else if (resultado.nivel === "funcionario") {
-                window.location.href = "/frontend/painel-ordens";
+                window.location.href = "/painel-ordens";
             } else {
                 window.location.href = "/"; // Redireciona o cliente para a página inicial (index)
             }

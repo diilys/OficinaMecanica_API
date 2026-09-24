@@ -1,28 +1,64 @@
-// Controle de Sessão e Autenticação do Painel
-document.addEventListener("DOMContentLoaded", () => {
-    const usuarioStorage = localStorage.getItem("usuarioLogado");
+document.addEventListener(
+    "DOMContentLoaded",
+    async () => {
 
-    if (!usuarioStorage) {
-        // Se não estiver logado, redireciona para o login
-        window.location.href = "/login";
-    } else {
-        const usuario = JSON.parse(usuarioStorage);
-        const elementoNome = document.getElementById("nome-usuario");
-        
-        if (elementoNome) {
-            elementoNome.textContent = `Olá, ${usuario.nome}`;
+        /*
+         * A autenticação NÃO é feita por localStorage.
+         *
+         * Auth.exigir() chama /me.
+         *
+         * O backend valida:
+         *
+         * cookie
+         *   ↓
+         * token da sessão
+         *   ↓
+         * tabela sessao
+         *   ↓
+         * usuário
+         *   ↓
+         * tipo = admin
+         */
+
+        const usuario =
+            await Auth.exigir([
+                "admin"
+            ]);
+
+
+        if (!usuario) {
+            return;
         }
-        
-        // Trava de segurança para garantir acesso restrito a administradores
-        if (usuario.nivel !== "admin") {
-            alert("Acesso restrito a administradores.");
-            window.location.href = "/";
+
+
+        const elementoNome =
+            document.getElementById(
+                "nome-usuario"
+            );
+
+
+        if (elementoNome) {
+
+            elementoNome.textContent =
+                `Olá, ${usuario.nome}`;
+        }
+
+
+        const btnSair =
+            document.getElementById(
+                "btn-sair-admin"
+            );
+
+
+        if (btnSair) {
+
+            btnSair.addEventListener(
+                "click",
+                async () => {
+
+                    await Auth.sair();
+                }
+            );
         }
     }
-});
-
-// Função de Logout
-function sair() {
-    localStorage.removeItem("usuarioLogado");
-    window.location.href = "/login";
-}
+);

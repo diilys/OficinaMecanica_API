@@ -1,62 +1,91 @@
 /* ============================================================
-   VARIÁVEIS DE CORES CENTRAIS DO SISTEMA
-   Altere aqui para mudar a cor principal de toda a aplicação
+   VibeMechanics - estilos globais
    ============================================================ */
 :root {
-  --cor-principal: #0d6efd;       /* Cor base (Azul Bootstrap Padrão) */
-  --cor-principal-hover: #0b5ed7; /* Tom mais escuro para efeito hover */
-  --cor-texto-claro: #ffffff;    /* Cor do texto em botões/navbars */
-  --cor-fundo-pagina: #f8f9fa;   /* Cor de fundo leve */
-  --cor-sombra: rgba(0, 0, 0, 0.1);
+  --brand-blue: #5381FF;
+  --brand-orange: #F97316;
+  --brand-white: #ffffff;
+  --brand-dark: #323232;
+  --page-background: #f8f9fa;
 }
 
-/* ============================================================
-   ESTILIZAÇÃO GERAL E RECONSTRUÇÃO DAS CORES DO BOOTSTRAP
-   ============================================================ */
-body {
-  background-color: var(--cor-fundo-pagina);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
+body { background-color: var(--page-background); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--brand-dark); }
+.bg-brand-blue { background-color: var(--brand-blue) !important; }
+.bg-brand-orange { background-color: var(--brand-orange) !important; }
+.bg-brand-white { background-color: var(--brand-white) !important; }
+.text-brand-blue { color: var(--brand-blue) !important; }
+.text-brand-orange { color: var(--brand-orange) !important; }
+.text-brand-white { color: var(--brand-white) !important; }
+.text-brand-dark { color: var(--brand-dark) !important; }
+.z-navbar { z-index: 1060; }
+.sidebar-lateral { top: 48px; left: -320px; width: 320px; height: calc(100vh - 48px); transition: left .3s ease; z-index: 1050; overflow-y: auto; }
+.sidebar-lateral.aberta { left: 0; }
+.user-name-limit { max-width: 130px; }
+.invisible-placeholder { visibility: hidden; }
+.content-offset-navbar { margin-top: 90px; }
+.page-top-spacing { padding-top: 50px; }
+.auth-container { max-width: 550px; margin-top: 80px; }
+.form-container-500 { margin-top: 90px; margin-bottom: 50px; max-width: 500px; }
+.form-container-550 { margin-top: 90px; margin-bottom: 50px; max-width: 550px; }
+.form-container-600 { margin-top: 90px; margin-bottom: 50px; max-width: 600px; }
+.form-container-800 { margin-top: 90px; margin-bottom: 50px; max-width: 800px; }
+.cursor-pointer { cursor: pointer; }
+.text-uppercase-input { text-transform: uppercase; }
+.h-200 { height: 200px; }
+.h-450 { height: 450px; }
+.icon-box-70 { width: 70px; height: 70px; }
+.image-box-80 { width: 80px; height: 80px; }
+.table-brand thead { background-color: var(--brand-blue); color: white; }
+.btn-brand { background-color: var(--brand-orange); color: white; border: 0; }
+.btn-brand:hover, .btn-brand:focus { background-color: #df6814; color: white; }
+.section-title { color: var(--brand-blue); }
+.card-action { background: white; color: var(--brand-dark); cursor: pointer; }
+.metric-strip { background-color: var(--brand-orange); }
+.navbar-brand .brand-light { color: white; }
+.navbar-brand .brand-dark { color: var(--brand-dark); }
+.status-dot { width: .65rem; height: .65rem; border-radius: 50%; display: inline-block; }
+.client-only, .admin-only { display: none; }
+.summary-value { font-size: 1.35rem; font-weight: 700; }
+.os-item-list { max-height: 280px; overflow-y: auto; }
+.empty-state { padding: 2rem; text-align: center; color: #6c757d; }
+.inline-style-1 { background-color: #5381FF; z-index: 1060; }
+.inline-style-2 { color: #ffffff; }
+.inline-style-3 { color: #323232; }
+.inline-style-4 { background-color: #F97316; }
+.inline-style-5 { margin-top: 90px; }
+.inline-style-6 { color: #5381FF; }
+.inline-style-7 { background-color: #5381FF; color: #ffffff; }
+.inline-style-8 { margin-top: 90px; margin-bottom: 50px; max-width: 500px; }
+.inline-style-9 { text-transform: uppercase; }
+.inline-style-10 { background-color: #5381FF; }
+.inline-style-11 { visibility: hidden; }
+.inline-style-12 { max-width: 550px; margin-top: 80px; }
+.inline-style-13 { margin-top: 90px; margin-bottom: 50px; max-width: 550px; }
+.inline-style-14 { margin-top: 90px; margin-bottom: 50px; max-width: 600px; }
+.inline-style-15 { top: 48px; left: -320px; width: 320px; height: calc(100vh - 48px); transition: left 0.3s ease; z-index: 1050; overflow-y: auto; }
+.inline-style-16 { padding-top: 50px; }
+.inline-style-17 { height: 450px; }
+.inline-style-18 { background-color: #ffffff; color: #323232; cursor: pointer; }
+.inline-style-19 { width: 80px; height: 80px; }
+.inline-style-20 { background-color: #ffffff; color: #323232; }
+.inline-style-21 { height: 200px; }
 
-/* Substitui a cor de fundo das barras de navegação */
-.navbar.bg-primary {
-  background-color: var(--cor-principal) !important;
+/* Cards interativos da aba lateral */
+.sidebar-card {
+  display: block;
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid #e7e7e7;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--brand-dark);
+  text-decoration: none;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
-
-/* Substitui a cor dos botões principais */
-.btn-primary {
-  background-color: var(--cor-principal) !important;
-  border-color: var(--cor-principal) !important;
-  color: var(--cor-texto-claro) !important;
+.sidebar-card:hover {
+  color: var(--brand-dark);
+  border-color: var(--brand-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 .35rem .8rem rgba(0,0,0,.10);
 }
-
-.btn-primary:hover, .btn-primary:focus {
-  background-color: var(--cor-principal-hover) !important;
-  border-color: var(--cor-principal-hover) !important;
-}
-
-/* Substitui o cabeçalho das tabelas */
-.table-primary {
-  --bs-table-bg: var(--cor-principal);
-  --bs-table-color: var(--cor-texto-claro);
-  background-color: var(--cor-principal) !important;
-  color: var(--cor-texto-claro) !important;
-}
-
-/* Estilo para os cards do Painel Principal (index.html) */
-.card-nav {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border: none;
-}
-
-.card-nav:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px var(--cor-sombra) !important;
-}
-
-.card-nav .card-body {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  text-align: center;
-}
+.sidebar-card i { color: var(--brand-blue); }

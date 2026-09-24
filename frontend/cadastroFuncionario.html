@@ -1,90 +1,80 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro de Funcionário - VibeMechanics</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/frontend/css/estilo.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cadastro de Funcionário - VibeMechanics</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<link href="/frontend/css/estilo.css" rel="stylesheet"/>
 </head>
 <body class="bg-light">
-
-    <nav class="navbar navbar-expand-lg fixed-top shadow-sm py-1" style="background-color: #5381FF; z-index: 1060;">
-        <div class="container-fluid px-4">
-            <div class="row w-100 align-items-center m-0">
-                <div class="col-4 d-flex align-items-center">
-                    <a href="/frontend/funcionarios.html" class="btn text-white p-0 fs-5 border-0 shadow-none d-flex align-items-center gap-2">
-                        <i class="fa-solid fa-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
-                    </a>
-                </div>
-                <div class="col-4 text-center">
-                    <a class="navbar-brand fw-bold fs-3 brand-title m-0" href="/">
-                        <span style="color: #ffffff;">Vibe</span><span style="color: #323232;">Mechanics</span>
-                    </a>
-                </div>
-                <div class="col-4"></div>
-            </div>
-        </div>
-    </nav>
-
-    <main class="container" style="margin-top: 90px; margin-bottom: 50px; max-width: 600px;">
-        <div class="card shadow border-0">
-            <div class="card-body p-4">
-                <h3 id="tituloFormulario" class="fw-bold mb-4" style="color: #5381FF;">Novo Funcionário</h3>
-                
-                <form id="form-funcionario">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" style="color: #323232;">Nome Completo</label>
-                        <input type="text" id="nome" class="form-control" placeholder="Digite o nome completo" required>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold" style="color: #323232;">CPF</label>
-                            <input type="text" id="cpf" class="form-control" placeholder="000.000.000-00" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold" style="color: #323232;">Telefone</label>
-                            <input type="text" id="telefone" class="form-control" placeholder="(00) 00000-0000">
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold" style="color: #323232;">Cargo</label>
-                            <input type="text" id="cargo" class="form-control" placeholder="Ex: Mecânico Chefe">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold" style="color: #323232;">Estado Civil</label>
-                            <input type="text" id="estado_civil" class="form-control" placeholder="Ex: Solteiro(a)">
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" style="color: #323232;">Endereço</label>
-                        <input type="text" id="endereco" class="form-control" placeholder="Rua, Número, Bairro">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" style="color: #323232;">E-mail</label>
-                        <input type="email" id="email" class="form-control" placeholder="email@exemplo.com" required>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold" style="color: #323232;">Senha</label>
-                        <input type="password" id="senha" class="form-control" placeholder="Digite uma senha segura" required>
-                    </div>
-
-                    <button type="submit" id="btnSalvar" class="btn text-white w-100 fw-bold py-2 shadow-sm" style="background-color: #F97316;">Cadastrar</button>
-                    
-                    <div id="mensagem" class="text-danger mt-3 text-center fw-bold"></div>
-                </form>
-            </div>
-        </div>
-    </main>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/frontend/js/funcionario.js"></script>
+<nav class="navbar navbar-expand-lg fixed-top shadow-sm py-1 inline-style-1">
+<div class="container-fluid px-4">
+<div class="row w-100 align-items-center m-0">
+<div class="col-4 d-flex align-items-center">
+<a class="btn text-white p-0 fs-5 border-0 shadow-none d-flex align-items-center gap-2" data-fallback="/" data-voltar="" href="#">
+<i class="fa-solid fa-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
+</a>
+</div>
+<div class="col-4 text-center">
+<a class="navbar-brand fw-bold fs-3 brand-title m-0" href="/">
+<span class="inline-style-2">Vibe</span><span class="inline-style-3">Mechanics</span>
+</a>
+</div>
+<div class="col-4"></div>
+</div>
+</div>
+</nav>
+<main class="container inline-style-14">
+<div class="card shadow border-0">
+<div class="card-body p-4">
+<h3 class="fw-bold mb-4 inline-style-6" id="tituloFormulario">Novo Funcionário</h3>
+<form id="form-funcionario">
+<div class="mb-3">
+<label class="form-label fw-semibold inline-style-3">Nome Completo</label>
+<input class="form-control" id="nome" placeholder="Digite o nome completo" required="" type="text"/>
+</div>
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="form-label fw-semibold inline-style-3">CPF</label>
+<input class="form-control" id="cpf" placeholder="000.000.000-00" required="" type="text"/>
+</div>
+<div class="col-md-6 mb-3">
+<label class="form-label fw-semibold inline-style-3">Telefone</label>
+<input class="form-control" id="telefone" placeholder="(00) 00000-0000" type="text"/>
+</div>
+</div>
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="form-label fw-semibold inline-style-3">Cargo</label>
+<input class="form-control" id="cargo" placeholder="Ex: Mecânico Chefe" type="text"/>
+</div>
+<div class="col-md-6 mb-3">
+<label class="form-label fw-semibold inline-style-3">Estado Civil</label>
+<input class="form-control" id="estado_civil" placeholder="Ex: Solteiro(a)" type="text"/>
+</div>
+</div>
+<div class="mb-3">
+<label class="form-label fw-semibold inline-style-3">Endereço</label>
+<input class="form-control" id="endereco" placeholder="Rua, Número, Bairro" type="text"/>
+</div>
+<div class="mb-3">
+<label class="form-label fw-semibold inline-style-3">E-mail</label>
+<input class="form-control" id="email" placeholder="email@exemplo.com" required="" type="email"/>
+</div>
+<div class="mb-4">
+<label class="form-label fw-semibold inline-style-3">Senha</label>
+<input class="form-control" id="senha" placeholder="Digite uma senha segura" required="" type="password"/>
+</div>
+<button class="btn text-white w-100 fw-bold py-2 shadow-sm inline-style-4" id="btnSalvar" type="submit">Cadastrar</button>
+<div class="text-danger mt-3 text-center fw-bold" id="mensagem"></div>
+</form>
+</div>
+</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/frontend/js/navigation.js"></script><script src="/frontend/js/auth.js"></script><script src="/frontend/js/funcionario.js"></script>
 </body>
 </html>

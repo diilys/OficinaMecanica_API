@@ -1,314 +1,203 @@
-const API_URL = "/clientes";
-
+const API_CLIENTES = "/clientes";
 let clientes = [];
 
-// ===============================
-// CARREGAR CLIENTES
-// ===============================
+async function lerResposta(resposta) {
+    const tipo = resposta.headers.get("content-type") || "";
+    return tipo.includes("application/json") ? resposta.json() : resposta.text();
+}
+
 async function carregarClientes() {
+    const tabela = document.getElementById("listaClientes");
+    if (!tabela) return;
+
     try {
-        const resposta = await fetch(API_URL);
-
-        if (!resposta.ok) {
-            throw new Error("Erro ao carregar clientes.");
-        }
-
+        const resposta = await fetch(API_CLIENTES);
+        if (!resposta.ok) throw new Error("Erro ao carregar clientes.");
         clientes = await resposta.json();
-
-        exibirClientes(clientes);
-
+        filtrarClientes();
     } catch (erro) {
         console.error(erro);
+        tabela.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Erro ao carregar clientes.</td></tr>`;
     }
 }
 
-// ===============================
-// EXIBIR CLIENTES
-// ===============================
 function exibirClientes(lista) {
     const tabela = document.getElementById("listaClientes");
-
     if (!tabela) return;
 
     tabela.innerHTML = "";
+    if (!lista.length) {
+        tabela.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum cliente encontrado.</td></tr>`;
+        return;
+    }
 
     lista.forEach(cliente => {
         const linha = document.createElement("tr");
+        const ativo = Boolean(cliente.ativo);
 
         linha.innerHTML = `
             <td>${cliente.id}</td>
             <td>${cliente.nome || ""}</td>
             <td>${cliente.cpf || ""}</td>
-            <td>${cliente.email || ""}</td>
-
             <td>
-                <button onclick="alterarCliente(${cliente.id})">
-                    Alterar
+                ${cliente.email || ""}
+                ${!ativo ? '<span class="badge bg-secondary ms-2">Inativo</span>' : ""}
+            </td>
+            <td class="text-end">
+                <button type="button" class="btn btn-warning btn-sm me-1" onclick="alterarCliente(${cliente.id})">
+                    <i class="fa-solid fa-pen"></i>
                 </button>
-
-                <button onclick="excluirCliente(${cliente.id})">
-                    Excluir
-                </button>
+                ${ativo
+                    ? `<button type="button" class="btn btn-danger btn-sm" onclick="inativarCliente(${cliente.id})"><i class="fa-solid fa-user-slash"></i></button>`
+                    : `<button type="button" class="btn btn-success btn-sm" onclick="reativarCliente(${cliente.id})"><i class="fa-solid fa-user-check"></i></button>`}
             </td>
         `;
-
         tabela.appendChild(linha);
     });
 }
 
-// ===============================
-// FILTRO
-// ===============================
 function filtrarClientes() {
     const campo = document.getElementById("campoFiltro");
     const texto = document.getElementById("textoFiltro");
+    if (!campo || !texto) return exibirClientes(clientes);
 
-    if (!campo || !texto) return;
+    const termo = texto.value.toLowerCase().trim();
+    if (!termo) return exibirClientes(clientes);
 
-    const valorCampo = campo.value;
-    const valorTexto = texto.value.toLowerCase().trim();
-
-    if (!valorTexto) {
-        exibirClientes(clientes);
-        return;
-    }
-
-    const filtrados = clientes.filter(cliente => {
-        let valor = "";
-
-        switch (valorCampo) {
-            case "id":
-                valor = cliente.id;
-                break;
-
-            case "nome":
-                valor = cliente.nome;
-                break;
-
-            case "cpf":
-                valor = cliente.cpf;
-                break;
-
-            case "email":
-                valor = cliente.email;
-                break;
-
-            default:
-                valor = "";
-        }
-
-        return String(valor || "")
-            .toLowerCase()
-            .includes(valorTexto);
-    });
-
-    exibirClientes(filtrados);
+    exibirClientes(clientes.filter(cliente =>
+        String(cliente[campo.value] ?? "").toLowerCase().includes(termo)
+    ));
 }
 
-// ===============================
-// LIMPAR FILTRO
-// ===============================
 function limparFiltroClientes() {
     const texto = document.getElementById("textoFiltro");
-
-    if (texto) {
-        texto.value = "";
-    }
-
+    if (texto) texto.value = "";
     exibirClientes(clientes);
 }
 
-// ===============================
-// ALTERAR CLIENTE
-// ===============================
 function alterarCliente(id) {
     window.location.href = `/cadastro-cliente?id=${id}`;
 }
 
-// ===============================
-// CARREGAR CLIENTE PARA EDIÇÃO
-// ===============================
 async function carregarClienteParaEdicao() {
-    const parametros = new URLSearchParams(window.location.search);
-    const id = parametros.get("id");
-
+    const id = new URLSearchParams(window.location.search).get("id");
     if (!id) return;
 
     try {
-        const resposta = await fetch(API_URL);
-
-        if (!resposta.ok) {
-            throw new Error("Erro ao buscar clientes.");
-        }
+        const resposta = await fetch(API_CLIENTES);
+        if (!resposta.ok) throw new Error("Erro ao buscar cliente.");
 
         const lista = await resposta.json();
+        const cliente = lista.find(item => Number(item.id) === Number(id));
+        if (!cliente) throw new Error("Cliente não encontrado.");
 
-        const cliente = lista.find(
-            item => Number(item.id) === Number(id)
-        );
-
-        if (!cliente) {
-            alert("Cliente não encontrado.");
-            return;
-        }
-
-        const nome = document.getElementById("nome");
-        const cpf = document.getElementById("cpf");
-        const email = document.getElementById("email");
-        const clienteId = document.getElementById("cliente_id");
-
-        if (nome) nome.value = cliente.nome || "";
-        if (cpf) cpf.value = cliente.cpf || "";
-        if (email) email.value = cliente.email || "";
-
-        if (clienteId) {
-            clienteId.value = cliente.id;
-        }
+        document.getElementById("nome").value = cliente.nome || "";
+        document.getElementById("cpf").value = cliente.cpf || "";
+        document.getElementById("email").value = cliente.email || "";
 
         const titulo = document.getElementById("tituloFormulario");
+        if (titulo) titulo.textContent = "Alterar Cliente";
 
-        if (titulo) {
-            titulo.textContent = "Alterar Cliente";
-        }
+        const botao = document.getElementById("btnSalvar");
+        if (botao) botao.textContent = "Salvar Alterações";
 
-        const botao = document.getElementById("btnSalvarCliente");
-
-        if (botao) {
-            botao.textContent = "Salvar Alterações";
-        }
-
+        // Senha só é necessária no cadastro.
+        ["senha", "confirma-senha"].forEach(campoId => {
+            const campo = document.getElementById(campoId);
+            if (!campo) return;
+            campo.required = false;
+            const grupo = campo.closest(".mb-3, .mb-4");
+            if (grupo) grupo.style.display = "none";
+        });
     } catch (erro) {
         console.error(erro);
-        alert("Erro ao carregar cliente.");
+        const mensagem = document.getElementById("mensagem");
+        if (mensagem) mensagem.textContent = erro.message;
     }
 }
 
-// ===============================
-// SALVAR CLIENTE
-// ===============================
-async function salvarCliente(event) {
-    event.preventDefault();
+async function salvarCliente(evento) {
+    evento.preventDefault();
 
-    const parametros = new URLSearchParams(window.location.search);
-    const idURL = parametros.get("id");
-
-    const campoId = document.getElementById("cliente_id");
-
-    const id = idURL || (campoId ? campoId.value : null);
+    const id = new URLSearchParams(window.location.search).get("id");
+    const mensagem = document.getElementById("mensagem");
+    if (mensagem) mensagem.textContent = "";
 
     const dados = {
-        nome: document.getElementById("nome").value,
-        cpf: document.getElementById("cpf").value,
-        email: document.getElementById("email").value
+        nome: document.getElementById("nome").value.trim(),
+        cpf: document.getElementById("cpf").value.trim(),
+        email: document.getElementById("email").value.trim()
     };
 
-    try {
-        let resposta;
+    if (!id) {
+        const senha = document.getElementById("senha").value;
+        const confirmaSenha = document.getElementById("confirma-senha").value;
 
-        if (id) {
-            // ALTERAÇÃO
-            resposta = await fetch(`${API_URL}/${id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(dados)
-            });
-
-        } else {
-            // CADASTRO
-            resposta = await fetch(API_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(dados)
-            });
+        if (senha !== confirmaSenha) {
+            if (mensagem) mensagem.textContent = "As senhas não coincidem.";
+            return;
         }
-
-        if (!resposta.ok) {
-            const erro = await resposta.text();
-            throw new Error(erro);
-        }
-
-        const mensagem = document.getElementById("mensagem");
-
-        if (mensagem) {
-            mensagem.textContent = id
-                ? "Cliente alterado com sucesso!"
-                : "Cliente cadastrado com sucesso!";
-        }
-
-        setTimeout(() => {
-            window.location.href = "/clientes.html";
-        }, 500);
-
-    } catch (erro) {
-        console.error(erro);
-
-        const mensagem = document.getElementById("mensagem");
-
-        if (mensagem) {
-            mensagem.textContent = "Erro ao salvar cliente.";
-        }
-    }
-}
-
-// ===============================
-// EXCLUIR CLIENTE
-// ===============================
-async function excluirCliente(id) {
-    if (!confirm("Deseja realmente excluir este cliente?")) {
-        return;
+        dados.senha = senha;
     }
 
     try {
-        const resposta = await fetch(`${API_URL}/${id}`, {
-            method: "DELETE"
+        const resposta = await fetch(id ? `${API_CLIENTES}/${id}` : API_CLIENTES, {
+            method: id ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dados)
         });
 
+        const resultado = await lerResposta(resposta);
         if (!resposta.ok) {
-            throw new Error("Erro ao excluir cliente.");
+            throw new Error(resultado.detail || "Erro ao salvar cliente.");
         }
 
-        carregarClientes();
-
+        if (mensagem) mensagem.textContent = id ? "Cliente alterado com sucesso!" : "Cliente cadastrado com sucesso!";
+        setTimeout(() => Navigation.voltar("/painel-clientes"), 500);
     } catch (erro) {
         console.error(erro);
-        alert("Erro ao excluir cliente.");
+        if (mensagem) mensagem.textContent = erro.message || "Erro ao salvar cliente.";
     }
 }
 
-// ===============================
-// INICIALIZAÇÃO
-// ===============================
-document.addEventListener("DOMContentLoaded", () => {
+async function inativarCliente(id) {
+    if (!confirm("Deseja realmente inativar este cliente? O histórico será preservado.")) return;
 
+    try {
+        const resposta = await fetch(`${API_CLIENTES}/${id}`, { method: "DELETE" });
+        const resultado = await lerResposta(resposta);
+        if (!resposta.ok) throw new Error(resultado.detail || "Erro ao inativar cliente.");
+        await carregarClientes();
+    } catch (erro) {
+        alert(erro.message);
+    }
+}
+
+async function reativarCliente(id) {
+    try {
+        const resposta = await fetch(`${API_CLIENTES}/${id}/reativar`, { method: "PATCH" });
+        const resultado = await lerResposta(resposta);
+        if (!resposta.ok) throw new Error(resultado.detail || "Erro ao reativar cliente.");
+        await carregarClientes();
+    } catch (erro) {
+        alert(erro.message);
+    }
+}
+
+// Mantém compatibilidade com chamadas antigas no HTML.
+const excluirCliente = inativarCliente;
+
+document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById("listaClientes")) {
         carregarClientes();
-
-        const textoFiltro = document.getElementById("textoFiltro");
-        const campoFiltro = document.getElementById("campoFiltro");
-        const btnLimpar = document.getElementById("btnLimparFiltro");
-
-        if (textoFiltro) {
-            textoFiltro.addEventListener("input", filtrarClientes);
-        }
-
-        if (campoFiltro) {
-            campoFiltro.addEventListener("change", filtrarClientes);
-        }
-
-        if (btnLimpar) {
-            btnLimpar.addEventListener("click", limparFiltroClientes);
-        }
+        document.getElementById("textoFiltro")?.addEventListener("input", filtrarClientes);
+        document.getElementById("campoFiltro")?.addEventListener("change", filtrarClientes);
+        document.getElementById("btnLimparFiltro")?.addEventListener("click", limparFiltroClientes);
     }
 
-    if (document.getElementById("form-cliente")) {
+    const formulario = document.getElementById("form-cliente");
+    if (formulario) {
         carregarClienteParaEdicao();
-
-        document
-            .getElementById("form-cliente")
-            .addEventListener("submit", salvarCliente);
+        formulario.addEventListener("submit", salvarCliente);
     }
 });
